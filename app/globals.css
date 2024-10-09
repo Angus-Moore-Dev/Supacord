@@ -1,0 +1,68 @@
+@tailwind components;
+@tailwind utilities;
+@layer tailwind {
+    @tailwind base;
+}
+@layer mantine, mantine-datatable;
+
+
+
+:root[data-mantine-color-scheme="dark"] {
+  --mantine-color-body: #000000 !important;
+  --mantine-color-text: var(--mantine-color-white) !important;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+h1 {
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+h4 {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+h5 {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+h6 {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
