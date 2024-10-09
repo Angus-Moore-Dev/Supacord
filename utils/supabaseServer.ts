@@ -1,4 +1,3 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { createServerClient as createClient } from '@supabase/ssr';
 
 import { cookies } from 'next/headers';
@@ -43,15 +42,6 @@ export const createServerClient = () =>
             },
         }
     );
-};
-
-/**
- * For use in API routing.
- */
-export const createApiClient = () => 
-{
-    noStore();
-    return createRouteHandlerClient<Database>({ cookies });
 };
 
 export const createAdminApiClient = () => 
