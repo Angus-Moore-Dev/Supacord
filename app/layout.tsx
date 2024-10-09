@@ -21,7 +21,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             </head>
             <body className={'min-h-screen flex flex-col antialiased'}>
                 <MantineProvider defaultColorScheme="dark" theme={{
-                    primaryColor: 'green'
+                    primaryColor: 'dark',
+                    fontSmoothing: true,
+                    defaultRadius: 'lg'
                 }}>
                     {children}
                 </MantineProvider>
