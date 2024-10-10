@@ -9,64 +9,50 @@ export default function Visualiser()
 
     useEffect(() => 
     {
-        // width is the width of the visualiser-body section
         const width = document.getElementById('visualiser-body')?.clientWidth || 1600;
         const height = document.getElementById('visualiser-body')?.clientHeight || 900;
 
-        const svg = d3.select(graphRef.current)
-            .attr('width', width)
-            .attr('height', height)
-            .style('border', '1px solid #ccc')
-            .call(d3.zoom<any, any>().on('zoom', (event) => 
-            {
-                svg.attr('transform', event.transform);
-            }))
-            .append('g');  // Adding group for panning/zooming
+        // Select the <svg> element and remove any existing content to prevent multiple instances
+        const svg = d3.select(graphRef.current);
+        svg.selectAll('*').remove();  // Clear previous content
 
-        // Dummy data for nodes and links
-        const nodes = [{ 
-            id: 'A',
-            x: width / 2,
-            y: height / 2,
-            vx: 0,
-            vy: 0
-        }, 
-        { 
-            id: 'B',
-            x: width / 2,
-            y: height / 2,
-            vx: 0,
-            vy: 0
-        }, 
-        { 
-            id: 'C',
-            x: width / 2,
-            y: height / 2,
-            vx: 0,
-            vy: 0
-        }, 
-        { 
-            id: 'D',
-            x: width / 2,
-            y: height / 2,
-            vx: 0,
-            vy: 0
-        }, 
-        { 
-            id: 'E',
-            x: width / 2,
-            y: height / 2,
-            vx: 0,
-            vy: 0
-        }];
+        // Append a <g> element for zoom and pan
+        const g = svg.append('g');
+
+        // Apply zoom behavior to the entire <svg>, but transform the <g> group inside
+        svg.call(
+            d3.zoom<any, any>()
+                .scaleExtent([0.1, 4])
+                .on('zoom', (event) => 
+                {
+                    g.attr('transform', event.transform); // Apply zoom and pan transformation to <g>
+                })
+        );
+
+        const nodes = [
+            { id: 'questions: A', type: 'question', x: width / 2, y: height / 2, vx: 0, vy: 0 },
+            { id: 'questions: B', type: 'question', x: width / 2, y: height / 2, vx: 0, vy: 0 },
+            { id: 'responses: C', type: 'response', x: width / 2, y: height / 2, vx: 0, vy: 0 },
+            { id: 'responses: D', type: 'response', x: width / 2, y: height / 2, vx: 0, vy: 0 },
+            { id: 'responses: E', type: 'response', x: width / 2, y: height / 2, vx: 0, vy: 0 }
+        ];
 
         const links = [
-            { source: 'A', target: 'B' },
-            { source: 'A', target: 'C' },
-            { source: 'B', target: 'D' },
-            { source: 'C', target: 'D' },
-            { source: 'D', target: 'E' }
+            { source: 'questions: A', target: 'questions: B' },
+            { source: 'questions: A', target: 'responses: C' },
+            { source: 'questions: B', target: 'responses: D' },
+            { source: 'responses: C', target: 'responses: D' },
+            { source: 'responses: D', target: 'responses: E' },
+            { source: 'responses: E', target: 'questions: A' }
         ];
+
+        // Calculate the degree (number of links) for each node
+        const degreeMap: Record<string, number> = {};
+        links.forEach(link => 
+        {
+            degreeMap[link.source] = (degreeMap[link.source] || 0) + 1;
+            degreeMap[link.target] = (degreeMap[link.target] || 0) + 1;
+        });
 
         // Initialize the simulation
         const simulation = d3.forceSimulation(nodes)
@@ -75,7 +61,7 @@ export default function Visualiser()
             .force('center', d3.forceCenter(width / 2, height / 2));
 
         // Initialize the links
-        const link = svg.selectAll('.link')
+        const link = g.selectAll('.link')
             .data(links)
             .enter()
             .append('line')
@@ -83,15 +69,15 @@ export default function Visualiser()
             .attr('stroke', '#FFF')
             .attr('stroke-width', 1);
 
-        // Initialize the nodes with drag functionality
-        const node = svg.selectAll('.node')
+        // Initialize the nodes with drag functionality and color coding
+        const node = g.selectAll('.node')
             .data(nodes)
             .enter()
             .append('circle')
             .attr('class', 'node')
-            .attr('r', 5)
+            .attr('r', (d: any) => (degreeMap[d.id] || 3) * 3) // Scale the radius by the number of links
             .attr('cursor', 'pointer')
-            .attr('fill', '#FFF')
+            .attr('fill', (d: any) => d.type === 'question' ? 'red' : 'green') // Color questions red, responses green
             .call(
                 d3.drag<SVGCircleElement, any>()
                     .on('start', (event, d) => 
@@ -129,17 +115,46 @@ export default function Visualiser()
                 .attr('cy', (d: any) => d.y);
         });
 
+        // Add a legend to explain the color coding
+        const legend = svg.append('g')
+            .attr('class', 'legend')
+            .attr('transform', `translate(${width - 150}, ${height - 100})`);
+
+        // Add question legend (red)
+        legend.append('circle')
+            .attr('cx', 0)
+            .attr('cy', 0)
+            .attr('r', 6)
+            .attr('fill', 'red');
+
+        legend.append('text')
+            .attr('x', 10)
+            .attr('y', 4)
+            .attr('fill', 'white')
+            .text('Questions');
+
+        // Add response legend (green)
+        legend.append('circle')
+            .attr('cx', 0)
+            .attr('cy', 20)
+            .attr('r', 6)
+            .attr('fill', 'green');
+
+        legend.append('text')
+            .attr('x', 10)
+            .attr('y', 24)
+            .attr('fill', 'white')
+            .text('Responses');
+
         return () => 
         {
-            // Cleanup when the component is unmounted
             simulation.stop();
         };
     }, []);
 
-
     return (
-        <section id='visualiser-body' className="flex-grow w-full min-h-full flex flex-col border-[1px] border-neutral-600 rounded-lg">
-            <svg ref={graphRef}></svg>
+        <section id='visualiser-body' className="flex-grow w-full min-h-full flex flex-col border-2 border-neutral-700 rounded-lg">
+            <svg ref={graphRef} className='flex-grow rounded-lg border-neutral-700'></svg>
         </section>
     );
 }

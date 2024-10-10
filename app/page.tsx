@@ -12,7 +12,7 @@ export default async function HomePage()
     const user = (await supabase.auth.getUser()).data.user;
 
     return <section className="flex-grow flex flex-col items-center gap-5 p-8 fade-in">
-        <Image src={SupacordBanner} alt="Supacord Banner" width={1736} height={411} className='fade-in' />
+        <Image src={SupacordBanner} alt="Supacord Banner" width={1736 / 2} height={411 / 2} className='fade-in' />
         <div className='flex flex-col gap-3 items-center text-center'>
             <h1>
 				Visualise your Supabase project&apos;s database and use natural language to query it.
