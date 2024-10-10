@@ -1,3 +1,4 @@
+import Visualiser from '@/components/Visualiser';
 import SupacordBanner from '@/public/supacord_banner.png';
 import { createServerClient } from '@/utils/supabaseServer';
 import { Button } from '@mantine/core';
@@ -29,9 +30,10 @@ export default async function HomePage()
             !user &&
 			<Link href='/auth'>
 			    <Button size='lg' variant='white'>
-					Join The Alpha Now
+                    Join The Alpha Now
 			    </Button>
 			</Link>
         }
+        <Visualiser />
     </section>;
 }
