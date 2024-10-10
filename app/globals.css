@@ -8,7 +8,7 @@
 
 
 :root[data-mantine-color-scheme="dark"] {
-  --mantine-color-body: #000000 !important;
+  --mantine-color-body: #1a1a1a !important;
   --mantine-color-text: var(--mantine-color-white) !important;
 }
 
