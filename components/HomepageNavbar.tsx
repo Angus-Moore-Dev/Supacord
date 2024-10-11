@@ -7,6 +7,7 @@ import { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { Button } from '@mantine/core';
 import { CircleUser } from 'lucide-react';
+import GitHubButton from 'react-github-btn';
 
 interface HomepageNavbarProps
 {
@@ -83,9 +84,20 @@ export default function HomepageNavbar({ user }: HomepageNavbarProps)
                 </Button>
             </section>
             <section className='ml-auto flex gap-5 items-center'>
+                <div className='flex items-end justify-center '>
+                    <GitHubButton
+                        href="https://github.com/Angus-Moore-Dev/Supacord"
+                        data-color-scheme="no-preference: dark; light: light; dark: dark;"
+                        data-size="large"
+                        data-show-count="true"
+                        aria-label="Star Angus-Moore-Dev/Supacord on GitHub"
+                    >
+                        &nbsp;&nbsp;GitHub Stars
+                    </GitHubButton>
+                </div>
                 {
                     !user &&
-                    <Link href='/auth'>
+                    <Link href='/auth' className='h-fit'>
                         <Button variant='white'>
                             Join The Alpha Now
                         </Button>
