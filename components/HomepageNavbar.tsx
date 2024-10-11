@@ -48,7 +48,7 @@ export default function HomepageNavbar({ user }: HomepageNavbarProps)
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
-    return <nav ref={navRef} className='w-full flex flex-row gap-3 items-center justify-center py-6 border-b-neutral-700 sticky transition top-0 z-50 h-[100px]'
+    return <nav ref={navRef} className='w-full flex flex-row gap-3 items-center justify-center py-6 border-b-neutral-700 fixed transition top-0 z-50 h-[100px]'
         style={{
             transition: 'all 0.3s ease-in-out'
         }}
