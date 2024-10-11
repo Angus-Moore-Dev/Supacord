@@ -9,7 +9,8 @@ const config: Config = {
     theme: {
         extend: {
             colors: {
-                primary: '#1a1a1a'
+                primary: '#1a1a1a',
+                'supabase-green': 'var(--supabase-green)'
             },
         },
     },

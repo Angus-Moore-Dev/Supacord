@@ -7,7 +7,6 @@ import { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { Button } from '@mantine/core';
 import { CircleUser } from 'lucide-react';
-import GitHubButton from 'react-github-btn';
 
 interface HomepageNavbarProps
 {
@@ -29,7 +28,7 @@ export default function HomepageNavbar({ user }: HomepageNavbarProps)
             {
                 if (navRef.current)
                 {
-                    navRef.current.classList.add('border-b-[1px]', 'bg-neutral-800', 'h-[80px]');
+                    navRef.current.classList.add('border-b-[1px]', 'bg-neutral-900', 'h-[80px]');
                     navRef.current.classList.remove('h-[100px]');
                 }
             }
@@ -37,7 +36,7 @@ export default function HomepageNavbar({ user }: HomepageNavbarProps)
             {
                 if (navRef.current)
                 {
-                    navRef.current.classList.remove('border-b-[1px]', 'bg-neutral-800', 'h-[80px]');
+                    navRef.current.classList.remove('border-b-[1px]', 'bg-neutral-900', 'h-[80px]');
                     navRef.current.classList.add('h-[100px]');
                 }
             }
@@ -49,9 +48,7 @@ export default function HomepageNavbar({ user }: HomepageNavbarProps)
     }, []);
 
     return <nav ref={navRef} className='w-full flex flex-row gap-3 items-center justify-center py-6 border-b-neutral-700 fixed transition top-0 z-50 h-[100px]'
-        style={{
-            transition: 'all 0.3s ease-in-out'
-        }}
+        style={{ transition: 'all 0.3s ease-in-out' }}
     >
         {/* <Image src={SupacordBanner} alt='Supacord' width={200} height={60} /> */}
         <div className='w-full flex max-w-7xl items-center gap-3'>
@@ -84,17 +81,6 @@ export default function HomepageNavbar({ user }: HomepageNavbarProps)
                 </Button>
             </section>
             <section className='ml-auto flex gap-5 items-center'>
-                <div className='flex items-end justify-center '>
-                    <GitHubButton
-                        href="https://github.com/Angus-Moore-Dev/Supacord"
-                        data-color-scheme="no-preference: dark; light: light; dark: dark;"
-                        data-size="large"
-                        data-show-count="true"
-                        aria-label="Star Angus-Moore-Dev/Supacord on GitHub"
-                    >
-                        &nbsp;&nbsp;GitHub Stars
-                    </GitHubButton>
-                </div>
                 {
                     !user &&
                     <Link href='/auth' className='h-fit'>
