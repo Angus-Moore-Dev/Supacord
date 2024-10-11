@@ -25,9 +25,21 @@ export default function HomepageNavbar({ user }: HomepageNavbarProps)
         const handleScroll = () => 
         {
             if (window.scrollY > 0) 
-                navRef.current?.classList.add('border-b-[1px]');
+            {
+                if (navRef.current)
+                {
+                    navRef.current.classList.add('border-b-[1px]', 'bg-neutral-800', 'h-[80px]');
+                    navRef.current.classList.remove('h-[100px]');
+                }
+            }
             else 
-                navRef.current?.classList.remove('border-b-[1px]');
+            {
+                if (navRef.current)
+                {
+                    navRef.current.classList.remove('border-b-[1px]', 'bg-neutral-800', 'h-[80px]');
+                    navRef.current.classList.add('h-[100px]');
+                }
+            }
         };
 
         // add the event listener
@@ -35,22 +47,38 @@ export default function HomepageNavbar({ user }: HomepageNavbarProps)
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
-    return <nav ref={navRef} className='w-full flex flex-row gap-3 items-center justify-center py-6 border-b-neutral-700 sticky transition bg-primary top-0 z-50'>
+    return <nav ref={navRef} className='w-full flex flex-row gap-3 items-center justify-center py-6 border-b-neutral-700 sticky transition top-0 z-50 h-[100px]'
+        style={{
+            transition: 'all 0.3s ease-in-out'
+        }}
+    >
         {/* <Image src={SupacordBanner} alt='Supacord' width={200} height={60} /> */}
         <div className='w-full flex max-w-7xl items-center gap-3'>
             <Image src={SupacordLogo} alt='Supacord' width={40} height={40} />
             <Image src={Supacord} alt='Supacord' width={150} height={40} />
             <section className='ml-16 flex gap-5 items-center'>
-                <Button>
+                <Button onClick={() => 
+                {
+                    document.getElementById('homepage-features')?.scrollIntoView({ behavior: 'smooth' });
+                }}>
                     Features
                 </Button>
-                <Button>
+                <Button onClick={() => 
+                {
+                    document.getElementById('homepage-usecases')?.scrollIntoView({ behavior: 'smooth' });
+                }}>
                     Use Cases
                 </Button>
-                <Button>
+                <Button onClick={() => 
+                {
+                    document.getElementById('homepage-datasecurity')?.scrollIntoView({ behavior: 'smooth' });
+                }}>
                     Data & Security
                 </Button>
-                <Button>
+                <Button onClick={() => 
+                {
+                    document.getElementById('homepage-pricing')?.scrollIntoView({ behavior: 'smooth' });
+                }}>
                     Pricing
                 </Button>
             </section>
