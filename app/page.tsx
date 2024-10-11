@@ -14,8 +14,8 @@ export default async function HomePage()
     return <section className="flex-grow flex flex-col items-center gap-5 fade-in relative">
         <HomepageNavbar user={user} />
         <section className='flex flex-col w-full max-w-7xl gap-10 px-8'>
-            <div className='flex flex-col gap-5 items-center text-center mt-24'>
-                <h1>
+            <div className='flex flex-col gap-5 items-center text-center mt-12'>
+                <h1 className='font-extrabold text-5xl max-w-4xl text-center'>
                     Visualise your Supabase project&apos;s database and use natural language to query it.
                 </h1>
                 <h3>

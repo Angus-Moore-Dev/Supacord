@@ -23,7 +23,6 @@ export default function Visualiser()
                 nodeColor={node => node.id === 0 ? 'gold' : 'red'}
                 nodeLabel={node => `Node: ${node.id}`}
                 backgroundColor='#1a1a1a'
-				
             />
         </div>
     );
