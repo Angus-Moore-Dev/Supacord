@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
-
 import '@mantine/core/styles.css';
 import './globals.css';
 import { ColorSchemeScript, MantineProvider } from '@mantine/core';
+import { Raleway } from 'next/font/google';
+const inter = Raleway({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
     title: 'Supacord | Data Visualiser',
@@ -20,7 +21,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                 <ColorSchemeScript color="dark" defaultColorScheme='dark' forceColorScheme="dark" />
                 <script async defer src="https://buttons.github.io/buttons.js"></script>
             </head>
-            <body className={'min-h-screen flex flex-col antialiased'}>
+            <body className={`${inter.className} min-h-screen flex flex-col antialiased`}>
                 <MantineProvider defaultColorScheme="dark" theme={{
                     primaryColor: 'dark',
                     fontSmoothing: true,
