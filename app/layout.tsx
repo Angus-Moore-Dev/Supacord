@@ -1,8 +1,10 @@
 import type { Metadata } from 'next';
 import '@mantine/core/styles.css';
+import '@mantine/notifications/styles.css';
 import './globals.css';
 import { ColorSchemeScript, MantineProvider } from '@mantine/core';
 import { Raleway } from 'next/font/google';
+import { Notifications } from '@mantine/notifications';
 const inter = Raleway({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
@@ -27,6 +29,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                     fontSmoothing: true,
                     defaultRadius: 'lg'
                 }}>
+                    <Notifications position='bottom-right' />
                     {children}
                 </MantineProvider>
             </body>

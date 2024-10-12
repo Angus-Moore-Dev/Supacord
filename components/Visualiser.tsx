@@ -5,7 +5,7 @@ import ForceGraph3D from 'react-force-graph-3d';
 export default function Visualiser({ width }: { width?: number }) 
 {
 
-    const N = 1500;
+    const N = 5000;
     const gData = {
         nodes: [...Array(N).keys()].map(i => ({ id: i })),
         links: [...Array(N).keys()]

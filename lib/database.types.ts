@@ -9,7 +9,105 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          country: string
+          createdAt: string
+          firstName: string
+          id: string
+          industry: string | null
+          lastName: string
+          purposeOfUse: string | null
+        }
+        Insert: {
+          country: string
+          createdAt?: string
+          firstName: string
+          id?: string
+          industry?: string | null
+          lastName: string
+          purposeOfUse?: string | null
+        }
+        Update: {
+          country?: string
+          createdAt?: string
+          firstName?: string
+          id?: string
+          industry?: string | null
+          lastName?: string
+          purposeOfUse?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      supabase_access_tokens: {
+        Row: {
+          accessToken: string
+          accessTokenExpirationUTC: number
+          createdAt: string
+          id: string
+          refreshToken: string
+        }
+        Insert: {
+          accessToken: string
+          accessTokenExpirationUTC: number
+          createdAt?: string
+          id: string
+          refreshToken: string
+        }
+        Update: {
+          accessToken?: string
+          accessTokenExpirationUTC?: number
+          createdAt?: string
+          id?: string
+          refreshToken?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supabase_access_tokens_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      supabase_oauth_auth_flow: {
+        Row: {
+          createdAt: string
+          profileId: string
+          requestingOrigin: string
+          state: string
+        }
+        Insert: {
+          createdAt?: string
+          profileId: string
+          requestingOrigin?: string
+          state?: string
+        }
+        Update: {
+          createdAt?: string
+          profileId?: string
+          requestingOrigin?: string
+          state?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supabase_oauth_auth_flow_profileId_fkey"
+            columns: ["profileId"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

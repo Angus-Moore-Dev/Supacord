@@ -6,7 +6,6 @@ import { User } from '@supabase/supabase-js';
 import { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { Button } from '@mantine/core';
-import { CircleUser } from 'lucide-react';
 
 interface HomepageNavbarProps
 {
@@ -51,7 +50,7 @@ export default function HomepageNavbar({ user }: HomepageNavbarProps)
         style={{ transition: 'all 0.3s ease-in-out' }}
     >
         {/* <Image src={SupacordBanner} alt='Supacord' width={200} height={60} /> */}
-        <div className='w-full flex max-w-7xl items-center gap-3'>
+        <div className='w-full flex max-w-7xl items-center gap-3 px-16'>
             <Image src={SupacordLogo} alt='Supacord' width={40} height={40} />
             <Image src={Supacord} alt='Supacord' width={150} height={40} />
             <section className='ml-16 flex gap-5 items-center'>
@@ -95,11 +94,6 @@ export default function HomepageNavbar({ user }: HomepageNavbarProps)
                         <Link href='/app'>
                             <Button variant='white'>
                                 Go To App &rarr;
-                            </Button>
-                        </Link>
-                        <Link href='/app'>
-                            <Button variant='white' leftSection={<CircleUser />}>
-                                My Account
                             </Button>
                         </Link>
                     </>

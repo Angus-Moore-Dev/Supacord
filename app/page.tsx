@@ -12,7 +12,7 @@ export default async function HomePage()
 
     return <section className="flex-grow flex flex-col items-center gap-5 fade-in relative">
         <HomepageNavbar user={user} />
-        <section className='flex flex-col w-full max-w-7xl gap-10 px-8 mt-[100px]'>
+        <section className='flex flex-col w-full max-w-7xl gap-10 px-16 mt-[100px]'>
             <div className='flex flex-col gap-10 items-start my-24'>
                 <h1 className='font-extrabold text-5xl max-w-4xl'>
                     Visualise Your <span className='underline text-supabase-green'><Link href='https://www.supabase.com' target='_blank'>Supabase</Link></span> Project in a 3D Universe.<small className='text-base text-neutral-400 font-normal'>&nbsp;&nbsp;&nbsp;Queryable With Natural Language Too!</small>
@@ -36,6 +36,14 @@ export default async function HomePage()
                                 Sign Up While It&apos;s Free!
                             </small>
                         </div>
+                    </Link>
+                }
+                {
+                    user &&
+                    <Link href='/app'>
+                        <Button size='lg' variant='white'>
+                            Go To App &rarr;
+                        </Button>
                     </Link>
                 }
             </div>
