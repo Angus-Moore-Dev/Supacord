@@ -1,6 +1,6 @@
 'use client';
 
-import { Select, Skeleton } from '@mantine/core';
+import { Checkbox, Select, Skeleton } from '@mantine/core';
 import { useEffect, useState } from 'react';
 import ConnectWithSupabase from '../ConnectWithSupabase';
 
@@ -14,6 +14,12 @@ export default function NewProjectImport()
 
     const [selectedOrganisation, setSelectedOrganisation] = useState<string>('');
     const [selectedProject, setSelectedProject] = useState<string>('');
+
+    const [projectSchemas, setProjectSchemas] = useState<string[]>([]);
+    const [selectedSchema, setSelectedSchema] = useState('');
+    
+    // const [projectTables, setProjectTables] = useState<string[]>([]);
+    // const [selectedTables, setSelectedTables] = useState<string[]>([]);
 
 
     useEffect(() => 
@@ -50,6 +56,26 @@ export default function NewProjectImport()
             }
         }
     }, [selectedOrganisation]);
+
+
+    useEffect(() => 
+    {
+        if (selectedProject)
+        {
+            setProjectSchemas([]);
+            fetch('/supabase/database/schemas', {
+                method: 'POST',
+                body: JSON.stringify({ organisationId: selectedOrganisation, projectId: selectedProject })
+            })
+                .then(res => res.json())
+                .then(data => 
+                {
+                    setProjectSchemas(data);
+                    if (data.includes('public'))
+                        setSelectedSchema('public');
+                });
+        }
+    }, [selectedProject]);
 
 
     return <div className="flex flex-col gap-5">
@@ -94,6 +120,59 @@ export default function NewProjectImport()
                     placeholder='Select Project'
                     className='max-w-[300px]'
                 />
+                {
+                    selectedProject &&
+                    <h3 className='mt-3'>
+                        Select Schema
+                    </h3>
+                }
+                {
+                    selectedProject && projectSchemas.length === 0 &&
+                    <>
+                        <div className='flex gap-3 items-center'>
+                            <Skeleton w={30} h={30} />
+                            <Skeleton w={260} h={30} />
+                        </div>
+                        <div className='flex gap-3 items-center'>
+                            <Skeleton w={30} h={30} />
+                            <Skeleton w={260} h={30} />
+                        </div>
+                        <div className='flex gap-3 items-center'>
+                            <Skeleton w={30} h={30} />
+                            <Skeleton w={260} h={30} />
+                        </div>
+                        <div className='flex gap-3 items-center'>
+                            <Skeleton w={30} h={30} />
+                            <Skeleton w={260} h={30} />
+                        </div>
+                        <div className='flex gap-3 items-center'>
+                            <Skeleton w={30} h={30} />
+                            <Skeleton w={260} h={30} />
+                        </div>
+                        <div className='flex gap-3 items-center'>
+                            <Skeleton w={30} h={30} />
+                            <Skeleton w={260} h={30} />
+                        </div>
+                    </>
+                }
+                {
+                    selectedProject && projectSchemas.length > 0 &&
+                    <>
+                        {
+                            projectSchemas.map(schema =>
+                                <div key={schema} className='flex gap-3 items-center'>
+                                    <Checkbox
+                                        checked={selectedSchema === schema}
+                                        onChange={e => setSelectedSchema(e.target.checked ? schema : '')}
+                                    />
+                                    <label htmlFor={schema}>
+                                        {schema}
+                                    </label>
+                                </div>
+                            )
+                        }
+                    </>
+                }
             </>
         }
     </div>;
