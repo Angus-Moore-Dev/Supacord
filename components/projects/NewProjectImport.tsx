@@ -84,7 +84,10 @@ export default function NewProjectImport()
                 <Select
                     disabled={!selectedOrganisation}
                     value={selectedProject}
-                    data={projects.filter(project => project.organisationId === selectedOrganisation).map(project => ({ value: project.id, label: project.name }))}
+                    data={[
+                        { value: '', label: 'Select Project', disabled: projects.filter(x => x.organisationId === selectedOrganisation).length === 1 },
+                        ...projects.filter(project => project.organisationId === selectedOrganisation).map(project => ({ value: project.id, label: project.name }))
+                    ]}
                     onOptionSubmit={setSelectedProject}
                     size='md'
                     label='Select Project'
