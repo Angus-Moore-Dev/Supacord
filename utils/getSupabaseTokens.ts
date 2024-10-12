@@ -1,10 +1,10 @@
 import { createServerClient } from './supabaseServer';
 
 
-export default async function getSupabaseToken()
+export default async function getSupabaseTokens()
 {
     const supabase = createServerClient();
-    const { data: token, error } = await supabase
+    const { data: tokens, error } = await supabase
         .from('supabase_access_tokens')
         .select('*');
 
@@ -14,8 +14,8 @@ export default async function getSupabaseToken()
         return null;
     }
 
-    if (token.length === 0)
+    if (tokens.length === 0)
         return null;
 
-    return token[0];
+    return tokens;
 }
