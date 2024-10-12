@@ -53,13 +53,19 @@ export type Database = {
           accessTokenExpirationUTC: number
           createdAt: string
           id: string
+          organisationId: string
+          organisationName: string
+          profileId: string
           refreshToken: string
         }
         Insert: {
           accessToken: string
           accessTokenExpirationUTC: number
           createdAt?: string
-          id: string
+          id?: string
+          organisationId: string
+          organisationName: string
+          profileId: string
           refreshToken: string
         }
         Update: {
@@ -67,13 +73,16 @@ export type Database = {
           accessTokenExpirationUTC?: number
           createdAt?: string
           id?: string
+          organisationId?: string
+          organisationName?: string
+          profileId?: string
           refreshToken?: string
         }
         Relationships: [
           {
-            foreignKeyName: "supabase_access_tokens_id_fkey"
-            columns: ["id"]
-            isOneToOne: true
+            foreignKeyName: "supabase_access_tokens_profileId_fkey"
+            columns: ["profileId"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },

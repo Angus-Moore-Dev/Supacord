@@ -1,5 +1,6 @@
 import { createAdminApiClient } from '@/utils/supabaseServer';
 import { NextRequest, NextResponse } from 'next/server';
+import { isSupabaseError, SupabaseManagementAPI } from 'supabase-management-js';
 
 
 export async function GET(request: NextRequest)
@@ -56,15 +57,49 @@ export async function GET(request: NextRequest)
     // get the current UTC time in seconds.
     const tokenExpirationUTC = Math.floor(Date.now() / 1000) + tokenData.expires_in;
 
+    const managementSupabase = new SupabaseManagementAPI({ accessToken: tokenData.access_token });
+
+    let organisationId: string | null = null;
+    let organisationName: string | null = null;
+    try
+    {
+        const organisations = await managementSupabase.getOrganizations();
+        if (!organisations || organisations.length === 0)
+        {
+            console.error('No organisations found');
+            return NextResponse.json({ error: 'No organisations found' }, { status: 500 });
+        }
+
+        organisationId = organisations[0].id;
+        organisationName = organisations[0].name;
+    }
+    catch (error)
+    {
+        if (isSupabaseError(error))
+        {
+            console.error(error);
+            return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        }
+    }
+
+
+    if (!organisationId || !organisationName)
+    {
+        console.error('Organsiation Id and Name not supplied a value before creating the token.');
+        return NextResponse.json({ error: 'No organisation found' }, { status: 500 });
+    }
+
     const { error: tokenError } = await adminSupabase
         .from('supabase_access_tokens')
         .insert({
-            id: profileId,
+            profileId: profileId,
             accessToken: tokenData.access_token,
             refreshToken: tokenData.refresh_token,
             accessTokenExpirationUTC: tokenExpirationUTC,
+            organisationId: organisationId,
+            organisationName: organisationName,
         });
-    
+
     if (tokenError)
     {
         console.error(tokenError);

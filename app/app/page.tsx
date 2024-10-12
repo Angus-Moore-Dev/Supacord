@@ -22,7 +22,7 @@ export default async function AppHomePage()
 
     return <div className="flex-grow flex flex-col gap-10 px-16 py-8">
         {
-            !accessToken && <div className='flex-grow flex flex-col gap-5 items-center justify-center'>
+            <div className='flex-grow flex flex-col gap-5 items-center justify-center'>
                 <h1>
                     Get Started By Connecting Your Supabase Project(s)
                 </h1>
