@@ -1,8 +1,9 @@
 'use client';
 
-import { Checkbox, Select, Skeleton } from '@mantine/core';
+import { Button, Checkbox, Select, Skeleton } from '@mantine/core';
 import { useEffect, useState } from 'react';
 import ConnectWithSupabase from '../ConnectWithSupabase';
+import { Plus } from 'lucide-react';
 
 
 export default function NewProjectImport()
@@ -20,6 +21,32 @@ export default function NewProjectImport()
     
     const [projectTables, setProjectTables] = useState<string[]>([]);
     const [selectedTables, setSelectedTables] = useState<string[]>([]);
+
+    const [isCreating, setIsCreating] = useState(false);
+
+
+    async function commenceVisualising()
+    {
+        setIsCreating(true);
+        const response = await fetch('/supabase/database/transformer', {
+            method: 'POST',
+            body: JSON.stringify({
+                organisationId: selectedOrganisation,
+                projectId: selectedProject,
+                schema: selectedSchema,
+                tables: selectedTables
+            })
+        });
+        if (response.ok)
+        {
+            // redirect to the new project page.
+        }
+        else
+        {
+            // show an error message.
+        }
+        setIsCreating(false);
+    }
 
 
     useEffect(() => 
@@ -94,15 +121,21 @@ export default function NewProjectImport()
                 })
             })
                 .then(res => res.json())
-                .then(setProjectTables);
+                .then(data => 
+                {
+                    setProjectTables(data);
+                    setSelectedTables(data);
+                });
         }
     }, [selectedSchema]);
 
 
     return <div className="flex flex-col gap-5">
-        <h1>
-            Begin Visualising A New Project
-        </h1>
+        <section className='flex gap-5 items-center justify-between'>
+            <h1>
+                Begin Visualising A New Project
+            </h1>
+        </section>
         {
             isLoading && <>
                 <Skeleton w={300} h={65} />
@@ -113,6 +146,7 @@ export default function NewProjectImport()
             !isLoading && <>
                 <div className='flex flex-row gap-5 items-start'>
                     <Select
+                        disabled={isCreating}
                         value={selectedOrganisation}
                         data={organisations.map(org => ({ value: org.id, label: org.name }))}
                         onOptionSubmit={setSelectedOrganisation}
@@ -129,7 +163,7 @@ export default function NewProjectImport()
                     </div>
                 </div>
                 <Select
-                    disabled={!selectedOrganisation}
+                    disabled={!selectedOrganisation || isCreating}
                     value={selectedProject}
                     data={[
                         { value: '', label: 'Select Project', disabled: projects.filter(x => x.organisationId === selectedOrganisation).length === 1 },
@@ -186,6 +220,7 @@ export default function NewProjectImport()
                                         projectSchemas.map(schema =>
                                             <div key={schema} className='flex gap-3 items-center'>
                                                 <Checkbox
+                                                    disabled={isCreating}
                                                     checked={selectedSchema === schema}
                                                     onChange={e => setSelectedSchema(e.target.checked ? schema : '')}
                                                 />
@@ -243,6 +278,7 @@ export default function NewProjectImport()
                                         projectTables.map(table =>
                                             <div key={table} className='flex gap-3 items-center'>
                                                 <Checkbox
+                                                    disabled={isCreating}
                                                     checked={selectedTables.includes(table)}
                                                     onChange={e => setSelectedTables(e.target.checked ? [...selectedTables, table] : selectedTables.filter(x => x !== table))}
                                                 />
@@ -259,5 +295,13 @@ export default function NewProjectImport()
                 </section>
             </>
         }
+        <Button variant='white' disabled={!selectedOrganisation || !selectedProject || !selectedSchema || selectedTables.length === 0} rightSection={<Plus />}
+            loading={isCreating}
+            fullWidth={false}
+            className='max-w-fit'
+            onClick={commenceVisualising}
+        >
+            Commence Visualising
+        </Button>
     </div>;
 }

@@ -1,3 +1,4 @@
+import accessTokenRefresher from '@/utils/accessTokenRefresher';
 import { createServerClient } from '@/utils/supabaseServer';
 import { NextRequest, NextResponse } from 'next/server';
 import { SupabaseManagementAPI } from 'supabase-management-js';
@@ -31,8 +32,10 @@ export async function POST(request: NextRequest)
     if (tokens.length === 0)
         return NextResponse.json({ error: 'No tokens found' }, { status: 404 });
 
+    const refreshedTokens = await accessTokenRefresher(tokens, supabase);
+
     // now we find the token that corresponds to the organisationId
-    const token = tokens.find(token => token.organisationId === organisationId);
+    const token = refreshedTokens.find(token => token.organisationId === organisationId);
     if (!token)
         return NextResponse.json({ error: 'No token found for organisation' }, { status: 404 });
 
