@@ -18,8 +18,8 @@ export default function NewProjectImport()
     const [projectSchemas, setProjectSchemas] = useState<string[]>([]);
     const [selectedSchema, setSelectedSchema] = useState('');
     
-    // const [projectTables, setProjectTables] = useState<string[]>([]);
-    // const [selectedTables, setSelectedTables] = useState<string[]>([]);
+    const [projectTables, setProjectTables] = useState<string[]>([]);
+    const [selectedTables, setSelectedTables] = useState<string[]>([]);
 
 
     useEffect(() => 
@@ -54,6 +54,10 @@ export default function NewProjectImport()
             {
                 setSelectedProject('');
             }
+            setProjectSchemas([]);
+            setProjectTables([]);
+            setSelectedSchema('');
+            setProjectTables([]);
         }
     }, [selectedOrganisation]);
 
@@ -63,24 +67,41 @@ export default function NewProjectImport()
         if (selectedProject)
         {
             setProjectSchemas([]);
+            setSelectedTables([]);
+            setSelectedSchema('');
+            setProjectTables([]);
             fetch('/supabase/database/schemas', {
                 method: 'POST',
                 body: JSON.stringify({ organisationId: selectedOrganisation, projectId: selectedProject })
             })
                 .then(res => res.json())
-                .then(data => 
-                {
-                    setProjectSchemas(data);
-                    if (data.includes('public'))
-                        setSelectedSchema('public');
-                });
+                .then(data => setProjectSchemas(data));
         }
     }, [selectedProject]);
 
 
+    useEffect(() => 
+    {
+        if (selectedSchema)
+        {
+            setProjectTables([]);
+            fetch('/supabase/database/tables', {
+                method: 'POST',
+                body: JSON.stringify({ 
+                    organisationId: selectedOrganisation, 
+                    projectId: selectedProject, 
+                    schema: selectedSchema 
+                })
+            })
+                .then(res => res.json())
+                .then(setProjectTables);
+        }
+    }, [selectedSchema]);
+
+
     return <div className="flex flex-col gap-5">
         <h1>
-            Import A New Project
+            Begin Visualising A New Project
         </h1>
         {
             isLoading && <>
@@ -120,59 +141,122 @@ export default function NewProjectImport()
                     placeholder='Select Project'
                     className='max-w-[300px]'
                 />
-                {
-                    selectedProject &&
-                    <h3 className='mt-3'>
-                        Select Schema
-                    </h3>
-                }
-                {
-                    selectedProject && projectSchemas.length === 0 &&
-                    <>
-                        <div className='flex gap-3 items-center'>
-                            <Skeleton w={30} h={30} />
-                            <Skeleton w={260} h={30} />
-                        </div>
-                        <div className='flex gap-3 items-center'>
-                            <Skeleton w={30} h={30} />
-                            <Skeleton w={260} h={30} />
-                        </div>
-                        <div className='flex gap-3 items-center'>
-                            <Skeleton w={30} h={30} />
-                            <Skeleton w={260} h={30} />
-                        </div>
-                        <div className='flex gap-3 items-center'>
-                            <Skeleton w={30} h={30} />
-                            <Skeleton w={260} h={30} />
-                        </div>
-                        <div className='flex gap-3 items-center'>
-                            <Skeleton w={30} h={30} />
-                            <Skeleton w={260} h={30} />
-                        </div>
-                        <div className='flex gap-3 items-center'>
-                            <Skeleton w={30} h={30} />
-                            <Skeleton w={260} h={30} />
-                        </div>
-                    </>
-                }
-                {
-                    selectedProject && projectSchemas.length > 0 &&
-                    <>
+                <section className='flex gap-10'>
+                    <div className='flex flex-col gap-5'>
                         {
-                            projectSchemas.map(schema =>
-                                <div key={schema} className='flex gap-3 items-center'>
-                                    <Checkbox
-                                        checked={selectedSchema === schema}
-                                        onChange={e => setSelectedSchema(e.target.checked ? schema : '')}
-                                    />
-                                    <label htmlFor={schema}>
-                                        {schema}
-                                    </label>
-                                </div>
-                            )
+                            selectedProject &&
+                            <h3 className='mt-3'>
+                                Select Schema
+                            </h3>
                         }
-                    </>
-                }
+                        {
+                            selectedProject && projectSchemas.length === 0 &&
+                            <>
+                                <div className='flex gap-3 items-center'>
+                                    <Skeleton w={30} h={30} />
+                                    <Skeleton w={260} h={30} />
+                                </div>
+                                <div className='flex gap-3 items-center'>
+                                    <Skeleton w={30} h={30} />
+                                    <Skeleton w={260} h={30} />
+                                </div>
+                                <div className='flex gap-3 items-center'>
+                                    <Skeleton w={30} h={30} />
+                                    <Skeleton w={260} h={30} />
+                                </div>
+                                <div className='flex gap-3 items-center'>
+                                    <Skeleton w={30} h={30} />
+                                    <Skeleton w={260} h={30} />
+                                </div>
+                                <div className='flex gap-3 items-center'>
+                                    <Skeleton w={30} h={30} />
+                                    <Skeleton w={260} h={30} />
+                                </div>
+                                <div className='flex gap-3 items-center'>
+                                    <Skeleton w={30} h={30} />
+                                    <Skeleton w={260} h={30} />
+                                </div>
+                            </>
+                        }
+                        {
+                            selectedProject && projectSchemas.length > 0 &&
+                            <div className='flex gap-5'>
+                                <div className='flex flex-col gap-5'>
+                                    {
+                                        projectSchemas.map(schema =>
+                                            <div key={schema} className='flex gap-3 items-center'>
+                                                <Checkbox
+                                                    checked={selectedSchema === schema}
+                                                    onChange={e => setSelectedSchema(e.target.checked ? schema : '')}
+                                                />
+                                                <label htmlFor={schema}>
+                                                    {schema}
+                                                </label>
+                                            </div>
+                                        )
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                    <div className='flex flex-col gap-5'>
+                        {
+                            selectedSchema &&
+                            <h3 className='mt-3'>
+                                Select Tables
+                            </h3>
+                        }
+                        {
+                            selectedSchema && projectTables.length === 0 &&
+                            <>
+                                <div className='flex gap-3 items-center'>
+                                    <Skeleton w={30} h={30} />
+                                    <Skeleton w={260} h={30} />
+                                </div>
+                                <div className='flex gap-3 items-center'>
+                                    <Skeleton w={30} h={30} />
+                                    <Skeleton w={260} h={30} />
+                                </div>
+                                <div className='flex gap-3 items-center'>
+                                    <Skeleton w={30} h={30} />
+                                    <Skeleton w={260} h={30} />
+                                </div>
+                                <div className='flex gap-3 items-center'>
+                                    <Skeleton w={30} h={30} />
+                                    <Skeleton w={260} h={30} />
+                                </div>
+                                <div className='flex gap-3 items-center'>
+                                    <Skeleton w={30} h={30} />
+                                    <Skeleton w={260} h={30} />
+                                </div>
+                                <div className='flex gap-3 items-center'>
+                                    <Skeleton w={30} h={30} />
+                                    <Skeleton w={260} h={30} />
+                                </div>
+                            </>
+                        }
+                        {
+                            selectedSchema && projectTables.length > 0 &&
+                            <div className='flex gap-5'>
+                                <div className='flex flex-col gap-5'>
+                                    {
+                                        projectTables.map(table =>
+                                            <div key={table} className='flex gap-3 items-center'>
+                                                <Checkbox
+                                                    checked={selectedTables.includes(table)}
+                                                    onChange={e => setSelectedTables(e.target.checked ? [...selectedTables, table] : selectedTables.filter(x => x !== table))}
+                                                />
+                                                <label htmlFor={table}>
+                                                    {table}
+                                                </label>
+                                            </div>
+                                        )
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </section>
             </>
         }
     </div>;
