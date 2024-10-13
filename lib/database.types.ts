@@ -47,6 +47,47 @@ export type Database = {
           },
         ]
       }
+      projects: {
+        Row: {
+          createdAt: string
+          databaseName: string
+          databaseStructure: Json[]
+          id: string
+          organisationId: string
+          profileId: string
+          projectId: string
+          selectedSchema: string
+        }
+        Insert: {
+          createdAt?: string
+          databaseName: string
+          databaseStructure: Json[]
+          id?: string
+          organisationId: string
+          profileId: string
+          projectId: string
+          selectedSchema: string
+        }
+        Update: {
+          createdAt?: string
+          databaseName?: string
+          databaseStructure?: Json[]
+          id?: string
+          organisationId?: string
+          profileId?: string
+          projectId?: string
+          selectedSchema?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_profileId_fkey"
+            columns: ["profileId"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       supabase_access_tokens: {
         Row: {
           accessToken: string

@@ -19,9 +19,6 @@ export default function NewProjectImport()
     const [projectSchemas, setProjectSchemas] = useState<string[]>([]);
     const [selectedSchema, setSelectedSchema] = useState('');
     
-    const [projectTables, setProjectTables] = useState<string[]>([]);
-    const [selectedTables, setSelectedTables] = useState<string[]>([]);
-
     const [isCreating, setIsCreating] = useState(false);
 
 
@@ -33,8 +30,9 @@ export default function NewProjectImport()
             body: JSON.stringify({
                 organisationId: selectedOrganisation,
                 projectId: selectedProject,
+                organisationName: organisations.find(org => org.id === selectedOrganisation)!.name,
+                projectName: projects.find(project => project.id === selectedProject)!.name,
                 schema: selectedSchema,
-                tables: selectedTables
             })
         });
         if (response.ok)
@@ -82,9 +80,7 @@ export default function NewProjectImport()
                 setSelectedProject('');
             }
             setProjectSchemas([]);
-            setProjectTables([]);
             setSelectedSchema('');
-            setProjectTables([]);
         }
     }, [selectedOrganisation]);
 
@@ -94,9 +90,7 @@ export default function NewProjectImport()
         if (selectedProject)
         {
             setProjectSchemas([]);
-            setSelectedTables([]);
             setSelectedSchema('');
-            setProjectTables([]);
             fetch('/supabase/database/schemas', {
                 method: 'POST',
                 body: JSON.stringify({ organisationId: selectedOrganisation, projectId: selectedProject })
@@ -105,29 +99,6 @@ export default function NewProjectImport()
                 .then(data => setProjectSchemas(data));
         }
     }, [selectedProject]);
-
-
-    useEffect(() => 
-    {
-        if (selectedSchema)
-        {
-            setProjectTables([]);
-            fetch('/supabase/database/tables', {
-                method: 'POST',
-                body: JSON.stringify({ 
-                    organisationId: selectedOrganisation, 
-                    projectId: selectedProject, 
-                    schema: selectedSchema 
-                })
-            })
-                .then(res => res.json())
-                .then(data => 
-                {
-                    setProjectTables(data);
-                    setSelectedTables(data);
-                });
-        }
-    }, [selectedSchema]);
 
 
     return <div className="flex flex-col gap-5">
@@ -234,68 +205,10 @@ export default function NewProjectImport()
                             </div>
                         }
                     </div>
-                    <div className='flex flex-col gap-5'>
-                        {
-                            selectedSchema &&
-                            <h3 className='mt-3'>
-                                Select Tables
-                            </h3>
-                        }
-                        {
-                            selectedSchema && projectTables.length === 0 &&
-                            <>
-                                <div className='flex gap-3 items-center'>
-                                    <Skeleton w={30} h={30} />
-                                    <Skeleton w={260} h={30} />
-                                </div>
-                                <div className='flex gap-3 items-center'>
-                                    <Skeleton w={30} h={30} />
-                                    <Skeleton w={260} h={30} />
-                                </div>
-                                <div className='flex gap-3 items-center'>
-                                    <Skeleton w={30} h={30} />
-                                    <Skeleton w={260} h={30} />
-                                </div>
-                                <div className='flex gap-3 items-center'>
-                                    <Skeleton w={30} h={30} />
-                                    <Skeleton w={260} h={30} />
-                                </div>
-                                <div className='flex gap-3 items-center'>
-                                    <Skeleton w={30} h={30} />
-                                    <Skeleton w={260} h={30} />
-                                </div>
-                                <div className='flex gap-3 items-center'>
-                                    <Skeleton w={30} h={30} />
-                                    <Skeleton w={260} h={30} />
-                                </div>
-                            </>
-                        }
-                        {
-                            selectedSchema && projectTables.length > 0 &&
-                            <div className='flex gap-5'>
-                                <div className='flex flex-col gap-5'>
-                                    {
-                                        projectTables.map(table =>
-                                            <div key={table} className='flex gap-3 items-center'>
-                                                <Checkbox
-                                                    disabled={isCreating}
-                                                    checked={selectedTables.includes(table)}
-                                                    onChange={e => setSelectedTables(e.target.checked ? [...selectedTables, table] : selectedTables.filter(x => x !== table))}
-                                                />
-                                                <label htmlFor={table}>
-                                                    {table}
-                                                </label>
-                                            </div>
-                                        )
-                                    }
-                                </div>
-                            </div>
-                        }
-                    </div>
                 </section>
             </>
         }
-        <Button variant='white' disabled={!selectedOrganisation || !selectedProject || !selectedSchema || selectedTables.length === 0} rightSection={<Plus />}
+        <Button variant='white' disabled={!selectedOrganisation || !selectedProject || !selectedSchema} rightSection={<Plus />}
             loading={isCreating}
             fullWidth={false}
             className='max-w-fit'
