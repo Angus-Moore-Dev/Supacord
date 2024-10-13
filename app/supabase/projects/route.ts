@@ -1,3 +1,4 @@
+import accessTokenRefresher from '@/utils/accessTokenRefresher';
 import { createServerClient } from '@/utils/supabaseServer';
 import { NextResponse } from 'next/server';
 import { SupabaseManagementAPI } from 'supabase-management-js';
@@ -32,8 +33,9 @@ export async function GET()
         }[]
     }[] = [];
 
+    const refreshedTokens = await accessTokenRefresher(accessTokens, supabase);
 
-    for (const token of accessTokens)
+    for (const token of refreshedTokens)
     {
         let accessToken = token.accessToken;
 

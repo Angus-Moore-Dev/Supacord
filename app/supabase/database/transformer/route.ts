@@ -91,7 +91,7 @@ export async function POST(request: NextRequest)
             const columnsToSelect = table.columns.filter(column => column.isPrimaryKey || column.foreignKeyRelation);
 
             // now we need to get the data from the table.
-            const tableData = await managementSupabase.runQuery(projectId, `SELECT ${columnsToSelect.map(column => `"${column.name}"`).join(', ')} FROM ${schema}."${table.table}" LIMIT 100 OFFSET ${offset}`);
+            const tableData = await managementSupabase.runQuery(projectId, `SELECT ${columnsToSelect.map(column => `"${column.name}"`).join(', ')} FROM ${schema}."${table.table}" LIMIT 500 OFFSET ${offset}`);
             if (!tableData)
             {
                 console.error('No result from query');
@@ -133,10 +133,14 @@ export async function POST(request: NextRequest)
                 return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
             }
 
-            offset += 100;
+            offset += 500;
         }
         while (offset < tableSize);
     }
+
+    // Now we must devise an algorithm that can scan through all nodes (brute-force) looking
+    // for any other nodes that our current node points to.
+
 
     return NextResponse.json({ id: newProjectId });
 }

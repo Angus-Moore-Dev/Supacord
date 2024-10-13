@@ -79,6 +79,7 @@ export default function NewProjectImport()
             {
                 setSelectedProject('');
             }
+            console.log(projectsForOrganisation);
             setProjectSchemas([]);
             setSelectedSchema('');
         }
