@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import accessTokenRefresher from '@/utils/accessTokenRefresher';
 import getDatabaseTableStructure from '@/utils/getDatabaseTableStructure';
 import { createServerClient } from '@/utils/supabaseServer';
@@ -64,6 +65,78 @@ export async function POST(request: NextRequest)
     }
 
     const { id: newProjectId } = newProject;
+
+    // we want to now go through every single table within the selected schema, pull all data from it and create new nodes in our database.
+    // we also want to create relationships between these nodes based on the foreign keys in the database. But that comes later.
+
+    // do it in batches of 100 rows at a time.
+    for (const table of tableStructure)
+    {
+        let offset = 0;
+        // find out how large this table is
+        const tableSizeResult = await managementSupabase.runQuery(projectId, `SELECT COUNT(*) FROM ${schema}."${table.table}"`);
+        if (!tableSizeResult)
+        {
+            console.error('No result from query');
+            return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        }
+
+        const tableSize = (tableSizeResult[0] as unknown as { count: number }).count;
+
+        console.log('SCRAPING TABLE::', table.table, 'SIZE::', tableSize);
+        do
+        {
+            // so the only columns we care about is the primary key and the foreign keys for establishing links.
+            // figure out from the table structure which columns are the primary key and which are foreign keys.
+            const columnsToSelect = table.columns.filter(column => column.isPrimaryKey || column.foreignKeyRelation);
+
+            // now we need to get the data from the table.
+            const tableData = await managementSupabase.runQuery(projectId, `SELECT ${columnsToSelect.map(column => `"${column.name}"`).join(', ')} FROM ${schema}."${table.table}" LIMIT 100 OFFSET ${offset}`);
+            if (!tableData)
+            {
+                console.error('No result from query');
+                return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+            }
+
+            // now we need to make the number of nodes for the number of results we just got (max of 100)
+            const entity: {
+                schema: string;
+                table: string;
+                entityData: Record<any, any>;
+                projectId: string;
+            }[] = [];
+
+            for (const row of tableData as unknown as Record<any, any>[])
+            {
+                const entityData: Record<any, any> = {};
+                for (const column of columnsToSelect)
+                {
+                    entityData[column.name] = row[column.name];
+                }
+
+                entity.push({
+                    schema,
+                    table: table.table,
+                    entityData,
+                    projectId: newProjectId,
+                });
+            }
+
+            // now we need to insert these entities into the database.
+            const { error: insertError } = await supabase
+                .from('project_nodes')
+                .insert(entity);
+
+            if (insertError)
+            {
+                console.error(insertError);
+                return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+            }
+
+            offset += 100;
+        }
+        while (offset < tableSize);
+    }
 
     return NextResponse.json({ id: newProjectId });
 }

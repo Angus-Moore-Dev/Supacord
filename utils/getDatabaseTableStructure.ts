@@ -1,7 +1,5 @@
 import { SupabaseManagementAPI } from 'supabase-management-js';
 
-
-
 export default async function getDatabaseTableStructure(
     supabase: SupabaseManagementAPI,
     projectId: string,
@@ -12,6 +10,7 @@ export default async function getDatabaseTableStructure(
         table: string,
         columns: {
             name: string,
+            isPrimaryKey: boolean,
             type: string, // int8, text, uuid, bigint etc.
             foreignKeyRelation: string | null, // schema.table.column or null
         }[]
@@ -26,7 +25,11 @@ export default async function getDatabaseTableStructure(
             COALESCE(
                 fk_info.foreign_table_schema || '.' || fk_info.foreign_table_name || '.' || fk_info.foreign_column_name,
                 NULL
-            ) AS foreign_key_relation
+            ) AS foreign_key_relation,
+            CASE
+                WHEN pk_info.column_name IS NOT NULL THEN true
+                ELSE false
+            END AS is_primary_key
         FROM
             (
                 SELECT
@@ -63,26 +66,55 @@ export default async function getDatabaseTableStructure(
             ON table_info.table_schema = fk_info.table_schema
             AND table_info.table_name = fk_info.table_name
             AND table_info.column_name = fk_info.column_name
+        LEFT JOIN
+            (
+                SELECT
+                    tc.table_schema,
+                    tc.table_name,
+                    kcu.column_name
+                FROM
+                    information_schema.table_constraints AS tc
+                JOIN
+                    information_schema.key_column_usage AS kcu
+                ON tc.constraint_name = kcu.constraint_name
+                WHERE
+                    tc.constraint_type = 'PRIMARY KEY'
+            ) AS pk_info
+            ON table_info.table_schema = pk_info.table_schema
+            AND table_info.table_name = pk_info.table_name
+            AND table_info.column_name = pk_info.column_name
         ORDER BY
             table_info.table_name,
             table_info.column_name;
     `);
 
-    if (!result)
+    if (!result) 
     {
         console.error('No result from query');
         throw new Error('No result from query');
     }
 
-    // we need to group the columns by table_name.
+    // We need to group the columns by table_name.
     let currentTable: string | null = null;
-    let currentColumns: { name: string, type: string, foreignKeyRelation: string | null }[] = [];
+    let currentColumns: {
+        name: string,
+        isPrimaryKey: boolean,
+        type: string,
+        foreignKeyRelation: string | null
+    }[] = [];
 
-    for (const row of result as unknown as { table_schema: string, table_name: string, column_name: string, data_type: string, foreign_key_relation: string }[])
+    for (const row of result as unknown as {
+        table_schema: string,
+        table_name: string,
+        column_name: string,
+        data_type: string,
+        foreign_key_relation: string | null,
+        is_primary_key: boolean
+    }[]) 
     {
-        if (currentTable !== row.table_name)
+        if (currentTable !== row.table_name) 
         {
-            if (currentTable)
+            if (currentTable) 
             {
                 tableColumns.push({ table: currentTable, columns: currentColumns });
                 currentColumns = [];
@@ -93,13 +125,16 @@ export default async function getDatabaseTableStructure(
 
         currentColumns.push({
             name: row.column_name,
+            isPrimaryKey: row.is_primary_key,
             type: row.data_type,
             foreignKeyRelation: row.foreign_key_relation,
         });
     }
 
-    if (currentTable)
+    if (currentTable) 
+    {
         tableColumns.push({ table: currentTable, columns: currentColumns });
+    }
 
     return tableColumns;
 }

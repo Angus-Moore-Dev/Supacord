@@ -47,6 +47,87 @@ export type Database = {
           },
         ]
       }
+      project_links: {
+        Row: {
+          createdAt: string
+          endingNodeId: string
+          id: string
+          projectId: string
+          startingNodeId: string
+        }
+        Insert: {
+          createdAt?: string
+          endingNodeId: string
+          id?: string
+          projectId: string
+          startingNodeId: string
+        }
+        Update: {
+          createdAt?: string
+          endingNodeId?: string
+          id?: string
+          projectId?: string
+          startingNodeId?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_links_endingNodeId_fkey"
+            columns: ["endingNodeId"]
+            isOneToOne: false
+            referencedRelation: "project_nodes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_links_projectId_fkey"
+            columns: ["projectId"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_links_startingNodeId_fkey"
+            columns: ["startingNodeId"]
+            isOneToOne: false
+            referencedRelation: "project_nodes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_nodes: {
+        Row: {
+          createdAt: string
+          entityData: Json
+          id: string
+          projectId: string
+          schema: string
+          table: string
+        }
+        Insert: {
+          createdAt?: string
+          entityData: Json
+          id?: string
+          projectId: string
+          schema: string
+          table: string
+        }
+        Update: {
+          createdAt?: string
+          entityData?: Json
+          id?: string
+          projectId?: string
+          schema?: string
+          table?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_nodes_projectId_fkey"
+            columns: ["projectId"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       projects: {
         Row: {
           createdAt: string
