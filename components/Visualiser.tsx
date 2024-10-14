@@ -5,8 +5,8 @@ import generateHexColour from '@/utils/generateColour';
 import { Divider } from '@mantine/core';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
-import ForceGraph3D from 'react-force-graph-3d';
 import SpaceGraphic from '@/public/space.jpg';
+import ForceGraph3D from 'react-force-graph-3d';
 // import ForceGraph2D from 'react-force-graph-2d';
 
 interface VisualiserProps
@@ -24,12 +24,32 @@ export default function Visualiser({ projectNodes, projectLinks }: VisualiserPro
     };
 
     const [height, setHeight] = useState(0);
+    const [width, setWidth] = useState(0);
 
 
     useEffect(() => 
     {
         if (typeof window !== 'undefined')
+        {
             setHeight(window.innerHeight - 100);
+            setWidth(window.innerWidth);
+        }
+
+        // on height or widht change, update the height and width.
+        window.addEventListener('resize', () => 
+        {
+            setHeight(window.innerHeight);
+            setWidth(window.innerWidth);
+        });
+
+        return () => 
+        {
+            window.removeEventListener('resize', () => 
+            {
+                setHeight(window.innerHeight);
+                setWidth(window.innerWidth);
+            });
+        };
     }, []);
 
     return <div className='flex-grow flex flex-col relative'>
@@ -59,6 +79,7 @@ export default function Visualiser({ projectNodes, projectLinks }: VisualiserPro
             cooldownTicks={100}
             onEngineTick={() => console.log('tick')}
             height={height}
+            width={width}
             enableNodeDrag={false}
             dagLevelDistance={100}
         />
