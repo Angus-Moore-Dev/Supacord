@@ -206,7 +206,7 @@ export async function POST(request: NextRequest)
                                 return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
                             }
 
-                            console.log('CREATED LINK BETWEEN::', node.id, 'AND::', otherNode.id);
+                            console.log('CREATED LINK BETWEEN WITH RELATIONSHIP::', entityData.foreignKeyRelationship);
                         }
                     }
                 }
