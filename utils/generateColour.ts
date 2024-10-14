@@ -1,5 +1,11 @@
-export default function generateHexColour(input: string): string 
+export default function generateVibrantHexColour(input: string): string 
 {
+    // Special case for 'public.notes'
+    if (input === 'public.notes') 
+    {
+        return '#FF0000'; // Bright red
+    }
+
     // Create a hash of the input string
     let hash = 0;
     for (let i = 0; i < input.length; i++) 
@@ -10,9 +16,9 @@ export default function generateHexColour(input: string): string
     // Convert hash to a hue value (0-360)
     const hue = hash % 360;
 
-    // Use HSL to ensure bright and saturated colors
-    const saturation = 100; // Full saturation
-    const lightness = 65 + (hash % 20); // Range from 65% to 85% lightness
+    // Use HSL to ensure bright and vibrant colors
+    const saturation = 80 + (hash % 20); // Range from 80% to 100% saturation
+    const lightness = 60 + (hash % 15); // Range from 60% to 75% lightness
 
     // Convert HSL to RGB
     const c = (1 - Math.abs(2 * lightness / 100 - 1)) * saturation / 100;

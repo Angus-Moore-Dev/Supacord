@@ -26,6 +26,7 @@
     "next": "14.2.15",
     "react": "^18",
     "react-dom": "^18",
+    "react-force-graph-2d": "^1.25.6",
     "react-force-graph-3d": "^1.24.4",
     "react-github-btn": "^1.4.0",
     "supabase-management-js": "^1.0.0",
