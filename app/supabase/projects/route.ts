@@ -37,53 +37,7 @@ export async function GET()
 
     for (const token of refreshedTokens)
     {
-        let accessToken = token.accessToken;
-
-        const now = Math.floor(Date.now() / 1000);
-        if (now > token.accessTokenExpirationUTC)
-        {
-            // use the refresher to get ourselves a new one.
-            const newTokenResult = await fetch('https://api.supabase.com/v1/oauth/token', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'Accept': 'application/json',
-                },
-                body: new URLSearchParams({
-                    client_id: process.env.SUPABASE_CLIENT_ID!,
-                    client_secret: process.env.SUPABASE_CLIENT_SECRET!,
-                    grant_type: 'refresh_token',
-                    refresh_token: token.refreshToken,
-                })
-            });
-
-            const newTokenData = await newTokenResult.json() as {
-                access_token: string;
-                refresh_token: string;
-                token_type: string;
-                expires_in: number;
-            };
-
-            accessToken = newTokenData.access_token;
-
-            // update the database with the new access token.
-            const { error: updateError } = await supabase
-                .from('supabase_access_tokens')
-                .update({
-                    accessToken: newTokenData.access_token,
-                    refreshToken: newTokenData.refresh_token,
-                    accessTokenExpirationUTC: now + newTokenData.expires_in,
-                })
-                .eq('profileId', user.id);
-
-            if (updateError)
-            {
-                console.error(updateError);
-                return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
-            }
-        }
-
-        const managementSupabase = new SupabaseManagementAPI({ accessToken });
+        const managementSupabase = new SupabaseManagementAPI({ accessToken: token.accessToken });
         const projects = await managementSupabase.getProjects();
         if (!projects)
         {
@@ -103,6 +57,8 @@ export async function GET()
             }))
         });
     }
+
+    console.log(projectData);
 
     return NextResponse.json(projectData);
 }

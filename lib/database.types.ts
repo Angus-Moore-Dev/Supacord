@@ -96,27 +96,24 @@ export type Database = {
       project_nodes: {
         Row: {
           createdAt: string
+          dbRelationship: string
           entityData: Json
           id: string
           projectId: string
-          schema: string
-          table: string
         }
         Insert: {
           createdAt?: string
+          dbRelationship: string
           entityData: Json
           id?: string
           projectId: string
-          schema: string
-          table: string
         }
         Update: {
           createdAt?: string
+          dbRelationship?: string
           entityData?: Json
           id?: string
           projectId?: string
-          schema?: string
-          table?: string
         }
         Relationships: [
           {
@@ -244,7 +241,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      find_matching_nodes: {
+        Args: {
+          project_id: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

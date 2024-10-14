@@ -39,6 +39,7 @@ export default async function AppHomePage()
             </div>
         }
         {
+            accessTokens && accessTokens.length > 0 &&
             <NewProjectImport />
         }
     </div>;
