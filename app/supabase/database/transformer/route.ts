@@ -5,7 +5,7 @@ import getDatabaseTableStructure from '@/utils/getDatabaseTableStructure';
 import { createServerClient } from '@/utils/supabaseServer';
 import { NextRequest, NextResponse } from 'next/server';
 import { SupabaseManagementAPI } from 'supabase-management-js';
-
+// import axios from 'axios';
 
 
 
@@ -142,77 +142,8 @@ export async function POST(request: NextRequest)
         while (offset < tableSize);
     }
 
-    // now we need to write an n^n algorithm to establish relationships between the nodes based on the foreign keys.
-    // this will be slow as hell but it's the only way to do it for the proof of concept.
-    // just match the JSON from the entityData of each node to the entityData of the other nodes if there's a value match, create a new project link.
-
-    const { data: nodes, error: nodesError } = await supabase
-        .from('project_nodes')
-        .select('*')
-        .eq('projectId', newProjectId);
-
-    if (nodesError)
-    {
-        console.error(nodesError);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
-    }
-
-
-    for (const node of nodes)
-    {
-        for (const otherNode of nodes)
-        {
-            if (node.id === otherNode.id)
-                continue;
-
-            for (const entityData of node.entityData as EntityData[])
-            {
-                for (const otherEntityData of otherNode.entityData as EntityData[])
-                {
-                    if (entityData.foreignKeyRelationship === `${otherNode.dbRelationship}.${otherEntityData.columnName}` && entityData.columnValue === otherEntityData.columnValue)
-                    {
-                        // check this link doesn't already exist.
-                        const { data: existingLinks, error: existingLinksError } = await supabase
-                            .from('project_links')
-                            .select('*')
-                            .eq('startingNodeId', node.id)
-                            .eq('endingNodeId', otherNode.id);
-
-                        const { data: existingLinksReverse, error: existingLinksReverseError } = await supabase
-                            .from('project_links')
-                            .select('*')
-                            .eq('startingNodeId', otherNode.id)
-                            .eq('endingNodeId', node.id);
-                            
-                        if (existingLinksError || existingLinksReverseError)
-                        {
-                            console.error(existingLinksError || existingLinksReverseError);
-                            return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
-                        }
-
-                        if (existingLinks.length === 0 && existingLinksReverse.length === 0)
-                        {
-                            const { error: insertedLinkError } = await supabase
-                                .from('project_links')
-                                .insert({
-                                    projectId: newProjectId,
-                                    startingNodeId: node.id,
-                                    endingNodeId: otherNode.id,
-                                });
-
-                            if (insertedLinkError)
-                            {
-                                console.error(insertedLinkError);
-                                return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
-                            }
-
-                            console.log('CREATED LINK BETWEEN WITH RELATIONSHIP::', entityData.foreignKeyRelationship);
-                        }
-                    }
-                }
-            }
-        }
-    }
+    // now we use axios to dispatch a request to the link generation endpoint.
+    // axios.post(`${request.nextUrl.origin}/supabase/database/transformer/link-generation`, { projectId: newProjectId });
 
     return NextResponse.json({ id: newProjectId });
 }
