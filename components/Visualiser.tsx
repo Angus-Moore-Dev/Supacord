@@ -82,6 +82,12 @@ export default function Visualiser({ projectNodes, projectLinks }: VisualiserPro
             width={width}
             enableNodeDrag={false}
             dagLevelDistance={100}
+            nodeVal={node => 
+            {
+                // based on the links, find out how many links are connected to this node
+                const links = projectLinks.filter(link => link.startingNodeId === node.id || link.endingNodeId === node.id);
+                return links.length;
+            }}
         />
         <div className='bottom-5 absolute w-full flex items-center justify-center'>
             <input
