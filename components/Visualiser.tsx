@@ -2,7 +2,7 @@
 'use client';
 import { Project, ProjectLink, ProjectNode } from '@/lib/global.types';
 import generateHexColour from '@/utils/generateColour';
-import { Button, Divider } from '@mantine/core';
+import { Button } from '@mantine/core';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import SpaceGraphic from '@/public/space.jpg';
@@ -26,8 +26,6 @@ export default function Visualiser({ projectNodes, projectLinks }: VisualiserPro
 
     const [height, setHeight] = useState(0);
     const [width, setWidth] = useState(0);
-
-    const [showSidebar, setShowSidebar] = useState(false);
 
 
     useEffect(() => 
@@ -74,7 +72,7 @@ export default function Visualiser({ projectNodes, projectLinks }: VisualiserPro
                 })
             }
         </div> */}
-        {/* <ForceGraph3D
+        <ForceGraph3D
             graphData={gData}
             linkColor={() => 'white'}
             nodeColor={node => generateHexColour(projectNodes.find(x => x.id === node.id)?.dbRelationship ?? '')}
@@ -92,7 +90,7 @@ export default function Visualiser({ projectNodes, projectLinks }: VisualiserPro
                 const links = projectLinks.filter(link => link.startingNodeId === node.id || link.endingNodeId === node.id);
                 return links.length;
             }}
-        /> */}
+        />
         <div className='bottom-5 absolute w-full flex items-center justify-center'>
             <div className='w-[60vw] flex gap-5 bg-black p-2 rounded-full border-[1px] border-neutral-700 shadow-lg items-center px-8'>
                 <input
@@ -133,11 +131,12 @@ const AnimatedSidebar = () =>
     }, []);
 
     return (
-        <div className="absolute top-2 right-0">
+        <div className="absolute right-0">
             <div
                 className={`w-[50vw] h-[calc(100vh-200px)] bg-black bg-opacity-75 border-[1px] border-neutral-700 shadow-lg transform transition-transform duration-300 ease-out ${
-                    isOpen ? 'translate-x-0' : 'translate-x-full'
+                    isOpen ? 'translate-x-0' : 'translate-x-[100%]'
                 }`}
+                style={{ zIndex: 1000 }}
             >
                 {/* Sidebar content goes here */}
                 <div className="p-4">
