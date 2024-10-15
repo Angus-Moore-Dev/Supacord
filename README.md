@@ -7,6 +7,7 @@ We are aiming to massively simplify the process of investigating data, table rel
 in non-foreign key columns, JSON data and more.
 
 <img width="1465" alt="Screenshot 2024-10-16 at 8 56 00 am" src="https://github.com/user-attachments/assets/e565cf22-154c-4af9-9230-24743be6b64f" />
+
 ![image](https://github.com/user-attachments/assets/3056798b-f7b3-460b-af0c-f851b7b28831)
 
 
