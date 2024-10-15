@@ -19,7 +19,8 @@ export async function POST(request: NextRequest)
     const { data: nodes, error: nodesError } = await supabase
         .from('project_nodes')
         .select('*')
-        .eq('projectId', projectId);
+        .eq('projectId', projectId)
+        .neq('dbRelationship', 'public.changelog');
 
     if (nodesError)
     {
