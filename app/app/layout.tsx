@@ -1,5 +1,6 @@
 import SupacordLogo from '@/public/supacord_logo_transparent.png';
 import { Button } from '@mantine/core';
+import { User } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -20,9 +21,14 @@ export default async function AppLayout({ children }: Readonly<{ children: React
                     Projects
                 </Button>
             </Link>
-            <Link href='/app/projects'>
+            <Link href='/app/data'>
                 <Button>
-                    Projects
+                    Data
+                </Button>
+            </Link>
+            <Link href='/app/account' className='ml-auto'>
+                <Button leftSection={<User size={20} />} variant='white'>
+                    My Account
                 </Button>
             </Link>
         </nav>

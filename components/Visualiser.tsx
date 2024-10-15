@@ -2,11 +2,12 @@
 'use client';
 import { Project, ProjectLink, ProjectNode } from '@/lib/global.types';
 import generateHexColour from '@/utils/generateColour';
-import { Divider } from '@mantine/core';
+import { Button, Divider } from '@mantine/core';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import SpaceGraphic from '@/public/space.jpg';
 import ForceGraph3D from 'react-force-graph-3d';
+import { Search } from 'lucide-react';
 // import ForceGraph2D from 'react-force-graph-2d';
 
 interface VisualiserProps
@@ -25,6 +26,8 @@ export default function Visualiser({ projectNodes, projectLinks }: VisualiserPro
 
     const [height, setHeight] = useState(0);
     const [width, setWidth] = useState(0);
+
+    const [showSidebar, setShowSidebar] = useState(false);
 
 
     useEffect(() => 
@@ -55,7 +58,8 @@ export default function Visualiser({ projectNodes, projectLinks }: VisualiserPro
     return <div className='flex-grow flex flex-col relative'>
         <Image src={SpaceGraphic} fill alt='Space' className='brightness-[25%]' />
         {/* legend that floats on the bottom right corner */}
-        <div className='flex flex-col gap-1 absolute top-2 right-2 bg-black bg-opacity-50 p-2 rounded-lg h-[50vh] z-50'>
+        <AnimatedSidebar />
+        {/* <div className='flex flex-col gap-1 absolute top-2 right-2 bg-black bg-opacity-50 p-2 rounded-lg h-[50vh] z-50'>
             <h1 className='text-xl font-bold'>Legend</h1>
             <Divider />
             {
@@ -69,8 +73,8 @@ export default function Visualiser({ projectNodes, projectLinks }: VisualiserPro
                     </div>;
                 })
             }
-        </div>
-        <ForceGraph3D
+        </div> */}
+        {/* <ForceGraph3D
             graphData={gData}
             linkColor={() => 'white'}
             nodeColor={node => generateHexColour(projectNodes.find(x => x.id === node.id)?.dbRelationship ?? '')}
@@ -88,13 +92,64 @@ export default function Visualiser({ projectNodes, projectLinks }: VisualiserPro
                 const links = projectLinks.filter(link => link.startingNodeId === node.id || link.endingNodeId === node.id);
                 return links.length;
             }}
-        />
+        /> */}
         <div className='bottom-5 absolute w-full flex items-center justify-center'>
-            <input
-                className='rounded-full w-[60vw] p-8 px-16 bg-[#0e0e0e] border-[1px] border-neutral-700 text-xl text-center focus:outline-none'
-                type='search'
-                placeholder='Search Your Database...'
-            />
+            <div className='w-[60vw] flex gap-5 bg-black p-2 rounded-full border-[1px] border-neutral-700 shadow-lg items-center px-8'>
+                <input
+                    id='search-database-input'
+                    className='focus:outline-none bg-transparent w-full py-4'
+                    type='search'
+                    placeholder='Search Your Database...'
+                />
+                <Button variant='white' className='min-w-fit' rightSection={<Search size={20} />}>
+                    Search
+                </Button>
+            </div>
         </div>
     </div>;
 }
+
+
+const AnimatedSidebar = () => 
+{
+    const [isOpen, setIsOpen] = useState(false);
+
+    useEffect(() => 
+    {
+        const handleKeyPress = (event: any) => 
+        {
+            if (event.key === 'Enter' && event.target.id === 'search-database-input') 
+            {
+                setIsOpen(true);
+            }
+        };
+
+        document.addEventListener('keypress', handleKeyPress);
+
+        return () => 
+        {
+            document.removeEventListener('keypress', handleKeyPress);
+        };
+    }, []);
+
+    return (
+        <div className="absolute top-2 right-0">
+            <div
+                className={`w-[50vw] h-[calc(100vh-200px)] bg-black bg-opacity-75 border-[1px] border-neutral-700 shadow-lg transform transition-transform duration-300 ease-out ${
+                    isOpen ? 'translate-x-0' : 'translate-x-full'
+                }`}
+            >
+                {/* Sidebar content goes here */}
+                <div className="p-4">
+                    <h2 className="text-lg font-bold mb-4">Sidebar Content</h2>
+                    <button
+                        onClick={() => setIsOpen(false)}
+                        className="bg-blue-500 text-white px-4 py-2 rounded"
+                    >
+                        Close Sidebar
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
