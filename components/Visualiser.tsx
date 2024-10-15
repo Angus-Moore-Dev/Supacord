@@ -55,7 +55,7 @@ export default function Visualiser({ projectNodes, projectLinks }: VisualiserPro
         };
     }, []);
 
-    return <div className='flex-grow flex flex-col relative'>
+    return <div className='flex-grow flex flex-col relative overflow-x-hidden'>
         <Image src={SpaceGraphic} fill alt='Space' className='brightness-[25%]' />
         {/* legend that floats on the bottom right corner */}
         <AnimatedSidebar />
