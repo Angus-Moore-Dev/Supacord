@@ -2,12 +2,10 @@
 'use client';
 import { Project, ProjectLink, ProjectNode } from '@/lib/global.types';
 import generateHexColour from '@/utils/generateColour';
-import { Button } from '@mantine/core';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import SpaceGraphic from '@/public/space.jpg';
 import ForceGraph3D from 'react-force-graph-3d';
-import { Search } from 'lucide-react';
 // import ForceGraph2D from 'react-force-graph-2d';
 
 interface VisualiserProps
@@ -27,8 +25,6 @@ export default function Visualiser({ projectNodes, projectLinks }: VisualiserPro
     const [height, setHeight] = useState(0);
     const [width, setWidth] = useState(0);
 
-    const [isOpen, setIsOpen] = useState(false);
-
 
     useEffect(() => 
     {
@@ -45,16 +41,6 @@ export default function Visualiser({ projectNodes, projectLinks }: VisualiserPro
             setWidth(window.innerWidth);
         });
 
-        const handleKeyPress = (event: any) => 
-        {
-            if (event.key === 'Enter' && event.target.id === 'search-database-input') 
-            {
-                setIsOpen(true);
-            }
-        };
-    
-        document.addEventListener('keypress', handleKeyPress);
-
         return () => 
         {
             window.removeEventListener('resize', () => 
@@ -62,40 +48,13 @@ export default function Visualiser({ projectNodes, projectLinks }: VisualiserPro
                 setHeight(window.innerHeight);
                 setWidth(window.innerWidth);
             });
-
-            document.removeEventListener('keypress', handleKeyPress);
         };
     }, []);
-
 
     return <div className='flex-grow flex flex-col relative overflow-x-hidden'>
         <Image src={SpaceGraphic} fill alt='Space' className='brightness-[25%]' />
         {/* legend that floats on the bottom right corner */}
-        <div className="absolute right-0"
-            style={{
-                zIndex: isOpen ? 1000 : -1,
-            }}>
-            <div
-                className={`w-[50vw] h-[calc(100vh-200px)] bg-black bg-opacity-100 border-[1px] border-neutral-700 shadow-lg transform transition-transform duration-300 ease-out ${
-                    isOpen ? 'translate-x-0' : 'translate-x-[100%]'
-                }`}
-                style={{ zIndex: 1000 }}
-            >
-                {/* Sidebar content goes here */}
-                <div className="p-4">
-                    <h2 className="text-lg font-bold mb-4">Sidebar Content</h2>
-                    <button
-                        onClick={() => 
-                        {
-                            setIsOpen(false);
-                        }}
-                        className="bg-blue-500 text-white px-4 py-2 rounded"
-                    >
-                        Close Sidebar
-                    </button>
-                </div>
-            </div>
-        </div>
+        <AnimatedSidebar />
         {/* <div className='flex flex-col gap-1 absolute top-2 right-2 bg-black bg-opacity-50 p-2 rounded-lg h-[50vh] z-50'>
             <h1 className='text-xl font-bold'>Legend</h1>
             <Divider />
@@ -140,11 +99,63 @@ export default function Visualiser({ projectNodes, projectLinks }: VisualiserPro
                     type='search'
                     placeholder='Search Your Database...'
                 />
-                <Button variant='white' className='min-w-fit' rightSection={<Search size={20} />}
-                    onClick={() => setIsOpen(true)}>
+                {/* <Button variant='white' className='min-w-fit' rightSection={<Search size={20} />}
+                    onClick={() => 
+                    {
+
+                    }}>
                     Search
-                </Button>
+                </Button> */}
             </div>
         </div>
     </div>;
 }
+
+
+const AnimatedSidebar = () => 
+{
+    const [isOpen, setIsOpen] = useState(false);
+
+    useEffect(() => 
+    {
+        const handleKeyPress = (event: any) => 
+        {
+            if (event.key === 'Enter' && event.target.id === 'search-database-input') 
+            {
+                setIsOpen(true);
+            }
+        };
+
+        document.addEventListener('keypress', handleKeyPress);
+
+        return () => 
+        {
+            document.removeEventListener('keypress', handleKeyPress);
+        };
+    }, []);
+
+    return (
+        <div className="absolute right-0"
+            style={{
+                zIndex: isOpen ? 1000 : -1,
+            }}>
+            <div
+                className={`w-[50vw] h-[calc(100vh-200px)] bg-black bg-opacity-100 border-[1px] border-neutral-700 shadow-lg transform transition-transform duration-300 ease-out ${
+                    isOpen ? 'translate-x-0' : 'translate-x-[100%]'
+                }`}
+                style={{ zIndex: 1000 }}
+            >
+                {/* Sidebar content goes here */}
+                <div className="p-4">
+                    <h2 className="text-lg font-bold mb-4">Sidebar Content</h2>
+                    <button
+                        onClick={() => setIsOpen(false)}
+                        className="bg-blue-500 text-white px-4 py-2 rounded"
+                    >
+                        Close Sidebar
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
