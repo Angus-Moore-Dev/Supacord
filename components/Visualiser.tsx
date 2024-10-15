@@ -72,26 +72,28 @@ export default function Visualiser({ projectNodes, projectLinks }: VisualiserPro
                 })
             }
         </div> */}
-        <ForceGraph3D
-            graphData={gData}
-            linkColor={() => 'white'}
-            nodeColor={node => generateHexColour(projectNodes.find(x => x.id === node.id)?.dbRelationship ?? '')}
-            nodeLabel={node => `Node: ${node.id}: ${JSON.stringify(projectNodes.find(x => x.id === node.id)?.entityData ?? {})}`}
-            backgroundColor='rgba(0, 0, 0, 0)'
-            cooldownTicks={100}
-            onEngineTick={() => console.log('tick')}
-            height={height}
-            width={width}
-            enableNodeDrag={false}
-            dagLevelDistance={100}
-            nodeVal={node => 
-            {
-                // based on the links, find out how many links are connected to this node
-                const links = projectLinks.filter(link => link.startingNodeId === node.id || link.endingNodeId === node.id);
-                return links.length;
-            }}
-        />
-        <div className='bottom-5 absolute w-full flex items-center justify-center'>
+        <div className='z-10'>
+            <ForceGraph3D
+                graphData={gData}
+                linkColor={() => 'white'}
+                nodeColor={node => generateHexColour(projectNodes.find(x => x.id === node.id)?.dbRelationship ?? '')}
+                nodeLabel={node => `Node: ${node.id}: ${JSON.stringify(projectNodes.find(x => x.id === node.id)?.entityData ?? {})}`}
+                backgroundColor='rgba(0, 0, 0, 0)'
+                cooldownTicks={100}
+                onEngineTick={() => console.log('tick')}
+                height={height}
+                width={width}
+                enableNodeDrag={false}
+                dagLevelDistance={100}
+                nodeVal={node => 
+                {
+                    // based on the links, find out how many links are connected to this node
+                    const links = projectLinks.filter(link => link.startingNodeId === node.id || link.endingNodeId === node.id);
+                    return links.length;
+                }}
+            />
+        </div>
+        <div className='bottom-5 absolute w-full flex items-center justify-center z-50'>
             <div className='w-[60vw] flex gap-5 bg-black p-2 rounded-full border-[1px] border-neutral-700 shadow-lg items-center px-8'>
                 <input
                     id='search-database-input'
@@ -131,9 +133,9 @@ const AnimatedSidebar = () =>
     }, []);
 
     return (
-        <div className="absolute right-0">
+        <div className="absolute right-0 z-50">
             <div
-                className={`w-[50vw] h-[calc(100vh-200px)] bg-black bg-opacity-75 border-[1px] border-neutral-700 shadow-lg transform transition-transform duration-300 ease-out ${
+                className={`w-[50vw] h-[calc(100vh-200px)] bg-black bg-opacity-100 border-[1px] border-neutral-700 shadow-lg transform transition-transform duration-300 ease-out ${
                     isOpen ? 'translate-x-0' : 'translate-x-[100%]'
                 }`}
                 style={{ zIndex: 1000 }}
