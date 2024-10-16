@@ -92,7 +92,7 @@ export async function POST(request: NextRequest)
             const columnsToSelect = table.columns.filter(column => column.isPrimaryKey || column.foreignKeyRelation);
 
             // now we need to get the data from the table.
-            const tableData = await managementSupabase.runQuery(projectId, `SELECT ${columnsToSelect.map(column => `"${column.name}"`).join(', ')} FROM ${schema}."${table.table}" LIMIT 500 OFFSET ${offset}`);
+            const tableData = await managementSupabase.runQuery(projectId, `SELECT ${columnsToSelect.map(column => `"${column.name}"`).join(', ')} FROM ${schema}."${table.table}" LIMIT 1000 OFFSET ${offset}`);
             if (!tableData)
             {
                 console.error('No result from query');
@@ -137,7 +137,7 @@ export async function POST(request: NextRequest)
                 return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
             }
 
-            offset += 500;
+            offset += 1000;
         }
         while (offset < tableSize);
     }
@@ -183,6 +183,32 @@ export async function POST(request: NextRequest)
                 newLinks.push(link);
                 linksCreated++;
                 console.log(`#${linksCreated}`, 'LINK CREATED::', link.startingNodeId, '->', link.endingNodeId);
+            }
+
+            // if there's 1000 links, batch insert them, then remove the new links from the array.
+            if (newLinks.length === 1000) 
+            {
+                let offset = 0;
+                const BATCH_SIZE = 1000;
+                do
+                {
+                    const { error: insertError } = await supabase
+                        .from('project_links')
+                        .insert(newLinks.slice(offset, offset + BATCH_SIZE));
+                    if (insertError) 
+                    {
+                        console.error(insertError);
+                        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+                    }
+                    offset += BATCH_SIZE;
+                }
+                while (offset < newLinks.length);
+                newLinks.splice(0, 1000);
+
+                console.log('BATCH INSERTED 1000 LINKS');
+
+                // add these onto hte existing links
+                existingLinks.push(...newLinks);
             }
         }
     }
