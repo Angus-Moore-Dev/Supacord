@@ -1,56 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
-import { Project, ProjectLink, ProjectNode } from '@/lib/global.types';
-import generateHexColour from '@/utils/generateColour';
+// import { Project, ProjectLink, ProjectNode } from '@/lib/global.types';
+// import generateHexColour from '@/utils/generateColour';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import SpaceGraphic from '@/public/space.jpg';
-import ForceGraph3D from 'react-force-graph-3d';
+// import ForceGraph3D from 'react-force-graph-3d';
 // import ForceGraph2D from 'react-force-graph-2d';
 
-interface VisualiserProps
+export default function Visualiser() 
 {
-    project: Project;
-    projectNodes: ProjectNode[];
-    projectLinks: ProjectLink[];
-}
-
-export default function Visualiser({ projectNodes, projectLinks }: VisualiserProps) 
-{
-    const gData = {
-        nodes: projectNodes.map(node => ({ id: node.id, })),
-        links: projectLinks.map(link => ({ source: link.startingNodeId, target: link.endingNodeId }))
-    };
-
-    const [height, setHeight] = useState(0);
-    const [width, setWidth] = useState(0);
-
-
-    useEffect(() => 
-    {
-        if (typeof window !== 'undefined')
-        {
-            setHeight(window.innerHeight - 100);
-            setWidth(window.innerWidth);
-        }
-
-        // on height or widht change, update the height and width.
-        window.addEventListener('resize', () => 
-        {
-            setHeight(window.innerHeight);
-            setWidth(window.innerWidth);
-        });
-
-        return () => 
-        {
-            window.removeEventListener('resize', () => 
-            {
-                setHeight(window.innerHeight);
-                setWidth(window.innerWidth);
-            });
-        };
-    }, []);
-
     return <div className='flex-grow flex flex-col relative overflow-x-hidden'>
         <Image src={SpaceGraphic} fill alt='Space' className='brightness-[25%]' />
         {/* legend that floats on the bottom right corner */}
@@ -70,7 +29,7 @@ export default function Visualiser({ projectNodes, projectLinks }: VisualiserPro
                 })
             }
         </div> */}
-        <div className='z-10'>
+        {/* <div className='z-10'>
             <ForceGraph3D
                 graphData={gData}
                 linkColor={() => 'white'}
@@ -91,7 +50,7 @@ export default function Visualiser({ projectNodes, projectLinks }: VisualiserPro
                 }}
                 showNavInfo={false}
             />
-        </div>
+        </div> */}
         <div className='bottom-5 absolute w-full flex items-center justify-center z-50'>
             <div className='w-[60vw] flex gap-5 bg-black p-2 rounded-full border-[1px] border-neutral-700 shadow-lg items-center px-8'>
                 <input
