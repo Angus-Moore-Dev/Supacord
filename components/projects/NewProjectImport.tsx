@@ -4,6 +4,7 @@ import { Button, Checkbox, Select, Skeleton } from '@mantine/core';
 import { useEffect, useState } from 'react';
 import ConnectWithSupabase from '../ConnectWithSupabase';
 import { Plus } from 'lucide-react';
+import { notifications } from '@mantine/notifications';
 
 
 export default function NewProjectImport()
@@ -37,11 +38,14 @@ export default function NewProjectImport()
         });
         if (response.ok)
         {
-            // redirect to the new project page.
+            const { id } = await response.json();
+            window.location.href = `/app/${id}`;
         }
         else
         {
-            // show an error message.
+            notifications.show({ title: 'Error', message: 'An error occurred while creating the project', color: 'red' });
+            console.error(await response.json());
+            return;
         }
         setIsCreating(false);
     }

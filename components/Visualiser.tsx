@@ -89,6 +89,7 @@ export default function Visualiser({ projectNodes, projectLinks }: VisualiserPro
                     const links = projectLinks.filter(link => link.startingNodeId === node.id || link.endingNodeId === node.id);
                     return links.length;
                 }}
+                showNavInfo={false}
             />
         </div>
         <div className='bottom-5 absolute w-full flex items-center justify-center z-50'>
@@ -99,13 +100,6 @@ export default function Visualiser({ projectNodes, projectLinks }: VisualiserPro
                     type='search'
                     placeholder='Search Your Database...'
                 />
-                {/* <Button variant='white' className='min-w-fit' rightSection={<Search size={20} />}
-                    onClick={() => 
-                    {
-
-                    }}>
-                    Search
-                </Button> */}
             </div>
         </div>
     </div>;
