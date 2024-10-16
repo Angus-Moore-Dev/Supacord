@@ -1,4 +1,4 @@
-import accessTokenRefresher from '@/utils/accessTokenRefresher';
+// import accessTokenRefresher from '@/utils/accessTokenRefresher';
 import { createServerClient } from '@/utils/supabaseServer';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -24,14 +24,14 @@ export async function POST(request: NextRequest)
     if (!project)
         return NextResponse.json({ error: 'Project not found' }, { status: 404 });
 
-    const { data: accessToken, error: accessTokenError } = await supabase
-        .from('supabase_access_tokens')
-        .select('*');
+    // const { data: accessToken, error: accessTokenError } = await supabase
+    //     .from('supabase_access_tokens')
+    //     .select('*');
 
-    if (accessTokenError)
-        return NextResponse.json({ error: 'Error fetching access token' }, { status: 500 });
+    // if (accessTokenError)
+    //     return NextResponse.json({ error: 'Error fetching access token' }, { status: 500 });
 
-    const refreshedTokens = await accessTokenRefresher(accessToken, supabase);
+    // const refreshedTokens = await accessTokenRefresher(accessToken, supabase);
 
     return NextResponse.json({ project });
 }

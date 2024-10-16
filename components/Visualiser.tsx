@@ -75,7 +75,7 @@ export default function Visualiser({ projectNodes, projectLinks }: VisualiserPro
                 graphData={gData}
                 linkColor={() => 'white'}
                 nodeColor={node => generateHexColour(projectNodes.find(x => x.id === node.id)?.dbRelationship ?? '')}
-                nodeLabel={node => `Node: ${node.id}: ${JSON.stringify(projectNodes.find(x => x.id === node.id)?.entityData ?? {})}`}
+                nodeLabel={node => `${projectNodes.find(x => x.id === node.id)?.dbRelationship} Node: ${node.id}: ${JSON.stringify(projectNodes.find(x => x.id === node.id)?.entityData ?? {})}`}
                 backgroundColor='rgba(0, 0, 0, 0)'
                 cooldownTicks={100}
                 onEngineTick={() => console.log('tick')}
