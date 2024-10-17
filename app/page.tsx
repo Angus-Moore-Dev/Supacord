@@ -4,6 +4,14 @@ import { Button } from '@mantine/core';
 import { CornerLeftUp } from 'lucide-react';
 import Link from 'next/link';
 
+import Example1 from '@/public/homepage/example1.png';
+import Example2 from '@/public/homepage/example2.png';
+import Example3 from '@/public/homepage/example3.png';
+import Example4 from '@/public/homepage/example4.png';
+import Example5 from '@/public/homepage/example5.png';
+import Image from 'next/image';
+
+
 
 export default async function HomePage()
 {
@@ -47,10 +55,42 @@ export default async function HomePage()
                     </Link>
                 }
             </div>
-            <div className='min-h-screen flex flex-col gap-5 pt-24 w-full' id='homepage-features'>
-                <h2 className='arial-black text-3xl'>
-                    Features - Title Description Here
-                </h2>
+            <div className="min-h-screen w-full flex flex-wrap justify-center items-center gap-5 relative" id="homepage-features">
+                <div className="relative w-full -mt-16 ml-16 group">
+                    <Image
+                        src={Example4}
+                        alt="Example 4"
+                        className="w-full rounded-xl shadow-lg transition-all duration-300 ease-in-out transform group-hover:scale-105 group-hover:z-10 border-4 border-white"
+                    />
+                </div>
+                <div className="relative w-full group">
+                    <Image
+                        src={Example1}
+                        alt="Example 1"
+                        className="w-full rounded-xl shadow-lg transition-all duration-300 ease-in-out transform group-hover:scale-105 group-hover:z-10 border-4 border-white"
+                    />
+                </div>
+                <div className="relative w-full -mt-16 ml-16 group">
+                    <Image
+                        src={Example2}
+                        alt="Example 2"
+                        className="w-full rounded-xl shadow-lg transition-all duration-300 ease-in-out transform group-hover:scale-105 group-hover:z-10 border-4 border-white bord"
+                    />
+                </div>
+                <div className="relative w-full -mt-16 -ml-16 group">
+                    <Image
+                        src={Example3}
+                        alt="Example 3"
+                        className="w-full rounded-xl shadow-lg transition-all duration-300 ease-in-out transform group-hover:scale-105 group-hover:z-10 border-4 border-white"
+                    />
+                </div>
+                <div className="relative w-full -mt-16 -ml-16 group">
+                    <Image
+                        src={Example5}
+                        alt="Example 5"
+                        className="w-full rounded-xl shadow-lg transition-all duration-300 ease-in-out transform group-hover:scale-105 group-hover:z-10 border-4 border-white"
+                    />
+                </div>
             </div>
             <div className='min-h-screen flex flex-col gap-5 pt-24 w-full' id='homepage-usecases'>
                 <h2 className='arial-black text-3xl'>
