@@ -25,15 +25,15 @@ export default function Visualiser({ project }: { project: { id: string, databas
 
     const [resultsOpacity, setResultsOpacity] = useState(0);
 
-    const [searchResults, setSearchResults] = useState('');
+    const [searchResults, setSearchResults] = useState<{ type: 'user' | 'ai', content: string }[]>([]);
 
     async function searchDatabase() 
     {
         if (isSearching || !projectDetails)
             return;
         setIsSearching(true);
-        setSearchResults(''); // Clear previous results
-    
+        setErrorText('');
+
         try 
         {
             const response = await fetch('/search', {
@@ -44,8 +44,11 @@ export default function Visualiser({ project }: { project: { id: string, databas
                 body: JSON.stringify({
                     projectId: projectDetails.id,
                     searchQuery: search,
+                    chatHistory: [...searchResults, { type: 'user', content: search }],
                 }),
             });
+
+            setSearchResults(searchResults => [...searchResults, { type: 'user', content: search }]);
     
             if (!response.ok || response.body === null) 
             {
@@ -62,7 +65,21 @@ export default function Visualiser({ project }: { project: { id: string, databas
                 isDone = done;
     
                 const chunk = decoder.decode(value, { stream: true });
-                setSearchResults(prevResults => prevResults + chunk);
+                // setSearchResults(prevResults => prevResults + chunk);
+                setSearchResults(searchResults => 
+                {
+                    if (searchResults[searchResults.length - 1]?.type === 'user')
+                    {
+                        // set the new AI response to the last user response
+                        return [...searchResults, { type: 'ai', content: chunk }];
+                    }
+                    else
+                    {
+                        // add the new chunk to the latest AI response
+                        const lastAIResponse = searchResults[searchResults.length - 1];
+                        return [...searchResults.slice(0, searchResults.length - 1), { type: 'ai', content: lastAIResponse.content + chunk }];
+                    }
+                });
             }
             while (!isDone);
     
@@ -131,13 +148,26 @@ export default function Visualiser({ project }: { project: { id: string, databas
             {/* <div className='w-full bg-neutral-900 p-4 max-h-[calc(100%-100px)] border-b-[1px] border-b-red-500'>
                 Left Results
             </div> */}
-            <div className='w-full p-4 max-h-[calc(100%)] pb-[120px] whitespace-pre-line overflow-y-auto border-b-[1px]'>
-                <Markdown
-                    remarkPlugins={[remarkGfm]}
-                    className='markdown'
-                >
-                    {searchResults}
-                </Markdown>
+            <div className='w-full flex flex-col gap-5 p-4 max-h-[calc(100%)] pb-[120px] whitespace-pre-line overflow-y-auto border-b-[1px]'>
+                {
+                    searchResults.map((result, index) =>
+                    {
+                        if (result.type === 'user')
+                        {
+                            return <div key={index} className='w-full p-4 px-8 bg-white text-black rounded-lg shadow-lg whitespace-pre-line'>
+                                {result.content}
+                            </div>;
+                        }
+                        else
+                            return <Markdown
+                                key={index}
+                                remarkPlugins={[remarkGfm]}
+                                className='markdown'
+                            >
+                                {result.content}
+                            </Markdown>;
+                    })
+                }
             </div>
         </div>
         <div

@@ -20,12 +20,14 @@ export async function POST(request: NextRequest)
         return new Response(JSON.stringify({ error: 'User not authenticated' }), { status: 401 });
     }
 
-    const { projectId, searchQuery } = await request.json();
-    if (!projectId || !searchQuery) 
+    const { projectId, searchQuery, chatHistory } = await request.json();
+    if (!projectId || !searchQuery || !chatHistory) 
     {
         return new Response(JSON.stringify({ error: 'Missing projectId or searchQuery' }), { status: 400 });
     }
 
+
+    console.log(chatHistory);
     const { data: project } = await supabase
         .from('projects')
         .select('*')
@@ -104,10 +106,10 @@ export async function POST(request: NextRequest)
                 The schema structure is as follows in JSON format:
                 ${JSON.stringify(project.databaseStructure)}`
             },
-            {
-                role: 'user',
-                content: searchQuery
-            }
+            ...chatHistory.map((message: { type: 'user' | 'ai', content: string }) => ({
+                role: message.type === 'user' ? 'user' : 'assistant',
+                content: message.content
+            }))
         ],
         stream: true
     });
@@ -118,6 +120,9 @@ export async function POST(request: NextRequest)
         async start(controller) 
         {
 
+            if (chatHistory.length > 0)
+                controller.enqueue('\n\n');
+
             let sqlQuery = '';
             for await (const chunk of openAIStream) 
             {
@@ -127,23 +132,25 @@ export async function POST(request: NextRequest)
                 fullMessage += text;
             }
 
-            controller.enqueue('\n\n===EXECUTING QUERY===\n\n');
-            fullMessage += '\n\n===EXECUTING QUERY===\n\n';
 
             try 
             {
                 console.log(sqlQuery);
 
-                if (sqlQuery.trim().toLowerCase().startsWith('multiple queries')) 
+                if (sqlQuery.startsWith('MULTIPLE QUERIES')) 
                 {
-                    const queries = sqlQuery.replaceAll('MULTIPLE QUERIES', '').split('multiple queries').map(query => query
+                    const queries = sqlQuery.replaceAll('MULTIPLE QUERIES', '').split('\n\n').map(query => query
                         .trim()
                         .replaceAll('```sql', '')
                         .replaceAll('```', '')
                     ).filter(Boolean);
-                    const results = await Promise.all(queries.map(query => managementSupabase.runQuery(project.projectId, query)));
-                    for (const result of results) 
+
+                    for (const query of queries)
                     {
+                        console.log('Executing query:', query);
+                        controller.enqueue('\n\n===EXECUTING QUERY===\n\n');
+                        fullMessage += '\n\n===EXECUTING QUERY===\n\n';
+                        const result = await managementSupabase.runQuery(project.projectId, query);
                         if (Array.isArray(result) && result.length > 0) 
                         {
                             const markdownTable = convertToMarkdownTable(result);
@@ -159,6 +166,9 @@ export async function POST(request: NextRequest)
                 }
                 else
                 {
+                    controller.enqueue('\n\n===EXECUTING QUERY===\n\n');
+                    fullMessage += '\n\n===EXECUTING QUERY===\n\n';
+
                     const result = await managementSupabase.runQuery(project.projectId, sqlQuery
                         .replaceAll('```sql', '')
                         .replaceAll('```', '')
@@ -206,5 +216,5 @@ function convertToMarkdownTable(data: Record<string, any>[]): string
         markdownTable += `| ${headers.map(header => row[header] !== null && row[header] !== undefined ? String(row[header]) : '').join(' | ')} |\n`;
     }
 
-    return markdownTable;
+    return `${markdownTable}\n\n`;
 }
