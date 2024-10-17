@@ -26,8 +26,6 @@ export async function POST(request: NextRequest)
         return new Response(JSON.stringify({ error: 'Missing projectId or searchQuery' }), { status: 400 });
     }
 
-
-    console.log(chatHistory);
     const { data: project } = await supabase
         .from('projects')
         .select('*')
@@ -71,7 +69,9 @@ export async function POST(request: NextRequest)
                 ONLY GET THE RELEVANT COLUMNS THAT ARE NEEDED FOR THE QUERY. DO NOT GET ALL COLUMNS UNLESS YOU BELIEVE IT'S NECESSARY.
                 IF THE SCHEMA HAS FUNCTIONS OR VIEWS, YOU CAN USE THEM IN YOUR QUERY IF YOU BELIEVE IT WILL HELP.
 
-                DO NOT EXPLAIN OR ELABORATE ON THE QUERY. ONLY WRITE THE QUERY. DO NOT WRITE ANYTHING ELSE.
+                USE THE CONVERSATION HISTORY TO UNDERSTAND, BUT ONLY MAKE REFERENCE TO THE SQL THAT WAS WRITTEN, NOTHING SYNTATICALLY THAT WOULD FAIL IN AN SQL QUERY.
+
+                DO NOT EXPLAIN OR ELABORATE ON THE QUERY. ONLY WRITE THE QUERY. DO NOT WRITE ANYTHING ELSE. GUARANTEE THAT THE COLUMNS OR QUERY YOU EXECUTE IS ACTUALLY POSSIBLE WITHIN POSTGRESQL.
 
                 IF THERE IS A TEXT/NUMBER COLUMN THAT LOOKS LIKE AN ENUM, YOU SHOULD DO SOME INVESTIGATION BY FIGURING OUT WHAT ALL OF THE ENUM VALUES ARE AND THEN USING THAT INFORMATION TO WRITE YOUR QUERY.
 
@@ -108,7 +108,7 @@ export async function POST(request: NextRequest)
             },
             ...chatHistory.map((message: { type: 'user' | 'ai', content: string }) => ({
                 role: message.type === 'user' ? 'user' : 'assistant',
-                content: message.content
+                content: message.content.replaceAll('\n\n===EXECUTING QUERY===\n\n', '').replaceAll('MULTIPLE QUERIES', '')
             }))
         ],
         stream: true
