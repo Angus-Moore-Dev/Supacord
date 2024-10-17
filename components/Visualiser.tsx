@@ -5,6 +5,9 @@ import { Alert, Button, Loader } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { Search } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
+import Markdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+
 
 export default function Visualiser({ project }: { project: { id: string, databaseName: string } }) 
 {
@@ -22,37 +25,59 @@ export default function Visualiser({ project }: { project: { id: string, databas
 
     const [resultsOpacity, setResultsOpacity] = useState(0);
 
+    const [searchResults, setSearchResults] = useState('');
 
-    async function searchDatabase()
+    async function searchDatabase() 
     {
         if (isSearching || !projectDetails)
             return;
         setIsSearching(true);
-
-        const queryResult = await fetch('/search', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                projectId: projectDetails.id,
-                searchQuery: search,
-            }),
-        });
-
-        if (queryResult.ok)
+        setSearchResults(''); // Clear previous results
+    
+        try 
         {
+            const response = await fetch('/search', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    projectId: projectDetails.id,
+                    searchQuery: search,
+                }),
+            });
+    
+            if (!response.ok || response.body === null) 
+            {
+                throw new Error('Failed to search database');
+            }
+    
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+    
+            let isDone: boolean = false;
+            do
+            {
+                const { done, value } = await reader.read();
+                isDone = done;
+    
+                const chunk = decoder.decode(value, { stream: true });
+                setSearchResults(prevResults => prevResults + chunk);
+            }
+            while (!isDone);
+    
             console.log('Query successful');
         }
-        else
+        catch (error) 
         {
-            const error = await queryResult.json();
             console.error(error);
-            setErrorText(error.message || 'Failed to search database');
+            setErrorText(JSON.stringify(error) || 'Failed to search database');
             notifications.show({ title: 'Error', message: 'Failed to search database', color: 'red' });
         }
-
-        setIsSearching(false);
+        finally 
+        {
+            setIsSearching(false);
+        }
     }
 
 
@@ -103,11 +128,16 @@ export default function Visualiser({ project }: { project: { id: string, databas
                 display: showResults ? 'flex' : 'none'
             }}
         >
-            <div className='w-1/2 bg-neutral-900 p-4 max-h-[calc(100%-100px)] border-b-[1px] border-b-red-500'>
+            {/* <div className='w-full bg-neutral-900 p-4 max-h-[calc(100%-100px)] border-b-[1px] border-b-red-500'>
                 Left Results
-            </div>
-            <div className='w-1/2 bg-neutral-800 p-4 max-h-[calc(100%-100px)] border-b-[1px] border-b-red-500'>
-                Right Results
+            </div> */}
+            <div className='w-full p-4 max-h-[calc(100%)] pb-[120px] whitespace-pre-line overflow-y-auto border-b-[1px]'>
+                <Markdown
+                    remarkPlugins={[remarkGfm]}
+                    className='markdown'
+                >
+                    {searchResults}
+                </Markdown>
             </div>
         </div>
         <div
@@ -115,12 +145,14 @@ export default function Visualiser({ project }: { project: { id: string, databas
             className='w-full flex items-center justify-center z-50 absolute left-0 right-0'
             style={{ 
                 bottom: '50vh',
-                transform: showResults ? 'translateY(calc(50vh - 10px))' : 'translateY(0)',
-                transition: 'transform 500ms ease-out'
+                transform: showResults ? 'translateY(calc(50vh))' : 'translateY(0)',
+                paddingBottom: '20px',
+                paddingTop: '10px',
+                transition: 'transform 500ms ease-out',
             }}
         >
             <form onSubmit={handleSearch} className='w-[60vw] flex flex-col gap-5'>
-                <div className='flex gap-5 bg-black p-2 rounded-full border-[1px] border-neutral-700 shadow-lg items-center px-8 py-4'>
+                <div className='flex gap-5 bg-black p-2 rounded-full border-[1px] border-neutral-700 items-center px-8 py-4'>
                     {
                         !projectDetails &&
                         <Loader size={24} color='white' className='my-3 mr-auto ml-8' />
@@ -129,7 +161,7 @@ export default function Visualiser({ project }: { project: { id: string, databas
                         projectDetails &&
                         <input
                             id='search-database-input'
-                            className='focus:outline-none bg-transparent w-full py-2.5 px-8 font-semibold text-lg'
+                            className='focus:outline-none bg-transparent w-full py-2.5 px-8 font-semibold text-lg drop-shadow-lg'
                             type='search'
                             placeholder={`Search ${projectDetails.databaseName}...`}
                             value={search}

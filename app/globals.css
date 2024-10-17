@@ -71,3 +71,19 @@ h6 {
 .arial-black {
   font-family: Arial Black, Arial Bold, Gadget, sans-serif;
 }
+
+.markdown {
+  table {
+    border-collapse: collapse;
+  }
+
+  th,
+  td {
+    padding: 6px 13px;
+    border: 1px solid white;
+  }
+
+  p {
+    line-height: 1.5;
+  }
+}
