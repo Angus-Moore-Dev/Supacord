@@ -1,7 +1,7 @@
 import accessTokenRefresher from '@/utils/accessTokenRefresher';
 import { createServerClient } from '@/utils/supabaseServer';
 import { NextResponse } from 'next/server';
-import { SupabaseManagementAPI } from 'supabase-management-js';
+import { isSupabaseError, SupabaseManagementAPI } from 'supabase-management-js';
 
 
 
@@ -33,32 +33,42 @@ export async function GET()
         }[]
     }[] = [];
 
-    const refreshedTokens = await accessTokenRefresher(accessTokens, supabase);
-
-    for (const token of refreshedTokens)
+    try
     {
-        const managementSupabase = new SupabaseManagementAPI({ accessToken: token.accessToken });
-        const projects = await managementSupabase.getProjects();
-        if (!projects)
+        const refreshedTokens = await accessTokenRefresher(accessTokens, supabase);
+
+        for (const token of refreshedTokens)
         {
-            console.error('ERROR FETCHING PROJECTS FOR ACCESS TOKEN ID:', token.id);
-            continue;
+            const managementSupabase = new SupabaseManagementAPI({ accessToken: token.accessToken });
+            const projects = await managementSupabase.getProjects();
+            if (!projects)
+            {
+                console.error('ERROR FETCHING PROJECTS FOR ACCESS TOKEN ID:', token.id);
+                continue;
+            }
+    
+            if (projects.length === 0)
+                continue;
+    
+            projectData.push({
+                organisationId: token.organisationId,
+                name: token.organisationName,
+                projects: projects.map(project => ({
+                    id: project.id,
+                    name: project.name,
+                }))
+            });
         }
-
-        if (projects.length === 0)
-            continue;
-
-        projectData.push({
-            organisationId: token.organisationId,
-            name: token.organisationName,
-            projects: projects.map(project => ({
-                id: project.id,
-                name: project.name,
-            }))
-        });
+    
+        return NextResponse.json(projectData);
     }
+    catch (error)
+    {
+        if (isSupabaseError(error))
+            console.error(error.message);
+        else
+            console.error(error);
 
-    console.log(projectData);
-
-    return NextResponse.json(projectData);
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    }
 }

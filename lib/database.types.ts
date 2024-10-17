@@ -9,43 +9,105 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      conversation_messages: {
+        Row: {
+          conversationId: string
+          createdAt: string
+          id: string
+          isAI: boolean
+          messageText: string
+          sqlQueries: string[]
+        }
+        Insert: {
+          conversationId: string
+          createdAt?: string
+          id?: string
+          isAI: boolean
+          messageText: string
+          sqlQueries: string[]
+        }
+        Update: {
+          conversationId?: string
+          createdAt?: string
+          id?: string
+          isAI?: boolean
+          messageText?: string
+          sqlQueries?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_messages_conversationId_fkey"
+            columns: ["conversationId"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversations: {
+        Row: {
+          createdAt: string
+          id: string
+          projectId: string
+          title: string
+        }
+        Insert: {
+          createdAt?: string
+          id?: string
+          projectId: string
+          title: string
+        }
+        Update: {
+          createdAt?: string
+          id?: string
+          projectId?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_projectId_fkey"
+            columns: ["projectId"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
+          anthropicKey: string | null
           country: string
           createdAt: string
           firstName: string
           id: string
           industry: string | null
           lastName: string
+          openAIKey: string | null
           purposeOfUse: string | null
         }
         Insert: {
+          anthropicKey?: string | null
           country: string
           createdAt?: string
           firstName: string
           id?: string
           industry?: string | null
           lastName: string
+          openAIKey?: string | null
           purposeOfUse?: string | null
         }
         Update: {
+          anthropicKey?: string | null
           country?: string
           createdAt?: string
           firstName?: string
           id?: string
           industry?: string | null
           lastName?: string
+          openAIKey?: string | null
           purposeOfUse?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "profiles_id_fkey"
-            columns: ["id"]
-            isOneToOne: true
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       project_links: {
         Row: {
@@ -129,7 +191,7 @@ export type Database = {
         Row: {
           createdAt: string
           databaseName: string
-          databaseStructure: Json[]
+          databaseStructure: Json
           id: string
           organisationId: string
           profileId: string
@@ -139,7 +201,7 @@ export type Database = {
         Insert: {
           createdAt?: string
           databaseName: string
-          databaseStructure: Json[]
+          databaseStructure?: Json
           id?: string
           organisationId: string
           profileId: string
@@ -149,7 +211,7 @@ export type Database = {
         Update: {
           createdAt?: string
           databaseName?: string
-          databaseStructure?: Json[]
+          databaseStructure?: Json
           id?: string
           organisationId?: string
           profileId?: string
@@ -241,12 +303,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      find_matching_nodes: {
-        Args: {
-          project_id: string
-        }
-        Returns: undefined
-      }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never
@@ -337,4 +394,19 @@ export type Enums<
   ? Database[PublicEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : PublicEnumNameOrOptions extends keyof PublicSchema["Enums"]
     ? PublicSchema["Enums"][PublicEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof PublicSchema["CompositeTypes"]
+    | { schema: keyof Database },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"]
+    ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never

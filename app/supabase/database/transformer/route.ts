@@ -71,11 +71,11 @@ export async function POST(request: NextRequest)
     // we also want to create relationships between these nodes based on the foreign keys in the database. But that comes later.
 
     // do it in batches of 100 rows at a time.
-    for (const table of tableStructure)
+    for (const table of tableStructure.schema)
     {
         let offset = 0;
         // find out how large this table is
-        const tableSizeResult = await managementSupabase.runQuery(projectId, `SELECT COUNT(*) FROM ${schema}."${table.table}"`);
+        const tableSizeResult = await managementSupabase.runQuery(projectId, `SELECT COUNT(*) FROM ${schema}."${table.table_name}"`);
         if (!tableSizeResult)
         {
             console.error('No result from query');
@@ -84,15 +84,15 @@ export async function POST(request: NextRequest)
 
         const tableSize = (tableSizeResult[0] as unknown as { count: number }).count;
 
-        console.log('SCRAPING TABLE::', table.table, 'SIZE::', tableSize);
+        console.log('SCRAPING TABLE::', table.table_name, 'SIZE::', tableSize);
         do
         {
             // so the only columns we care about is the primary key and the foreign keys for establishing links.
             // figure out from the table structure which columns are the primary key and which are foreign keys.
-            const columnsToSelect = table.columns.filter(column => column.isPrimaryKey || column.foreignKeyRelation);
+            const columnsToSelect = table.columns.filter(column => column.is_primary_key || column.foreign_key);
 
             // now we need to get the data from the table.
-            const tableData = await managementSupabase.runQuery(projectId, `SELECT ${columnsToSelect.map(column => `"${column.name}"`).join(', ')} FROM ${schema}."${table.table}" LIMIT 1000 OFFSET ${offset}`);
+            const tableData = await managementSupabase.runQuery(projectId, `SELECT ${columnsToSelect.map(column => `"${column.column_name}"`).join(', ')} FROM ${schema}."${table.table_name}" LIMIT 1000 OFFSET ${offset}`);
             if (!tableData)
             {
                 console.error('No result from query');
@@ -112,16 +112,16 @@ export async function POST(request: NextRequest)
                 for (const column of columnsToSelect)
                 {
                     entityData.push({
-                        columnName: column.name,
-                        columnValue: row[column.name],
-                        foreignKeyRelationship: column.foreignKeyRelation || '',
-                        isPrimaryKey: column.isPrimaryKey,
+                        columnName: column.column_name,
+                        columnValue: row[column.column_name],
+                        foreignKeyRelationship: column.foreign_key ? `${column.foreign_key.foreign_table_schema}.${column.foreign_key.foreign_table_name}.${column.foreign_key.foreign_column_name}` : '',
+                        isPrimaryKey: column.is_primary_key,
                     });
                 }
 
                 nodes.push({
                     projectId: newProjectId,
-                    dbRelationship: `${schema}.${table.table}`,
+                    dbRelationship: `${schema}.${table.table_name}`,
                     entityData,
                 });
             }
