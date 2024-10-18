@@ -1,18 +1,17 @@
 'use client';
 
-// import { createBrowserClient } from '@/utils/supabaseBrowser';
 import { Alert, Button, Loader } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { Search } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+// import ForceGraph3D from 'react-force-graph-3d';
 
 
 export default function Visualiser({ project }: { project: { id: string, databaseName: string } }) 
 {
     const searchBarRef = useRef<HTMLDivElement>(null);
-    // const supabase = createBrowserClient();
 
     const [projectDetails] = useState<{ id: string, databaseName: string }>(project);
 
@@ -26,6 +25,11 @@ export default function Visualiser({ project }: { project: { id: string, databas
     const [resultsOpacity, setResultsOpacity] = useState(0);
 
     const [searchResults, setSearchResults] = useState<{ type: 'user' | 'ai', content: string }[]>([]);
+
+    // const [gData, setGData] = useState<{
+    //     links: { source: string, target: string }[],
+    //     nodes: { id: string }[],
+    // }>();
 
     async function searchDatabase() 
     {
@@ -63,7 +67,7 @@ export default function Visualiser({ project }: { project: { id: string, databas
             {
                 const { done, value } = await reader.read();
                 isDone = done;
-    
+
                 const chunk = decoder.decode(value, { stream: true });
                 // setSearchResults(prevResults => prevResults + chunk);
                 setSearchResults(searchResults => 
@@ -80,10 +84,22 @@ export default function Visualiser({ project }: { project: { id: string, databas
                         return [...searchResults.slice(0, searchResults.length - 1), { type: 'ai', content: lastAIResponse.content + chunk }];
                     }
                 });
+
+                // if the user is currently scrolled to the bottom of the results, scroll to the bottom again.
+                // if they've scrolled up, don't scroll to the bottom.
+                const resultsDiv = searchBarRef.current?.nextElementSibling;
+                if (resultsDiv)
+                {
+                    const scrollBottom = resultsDiv.scrollHeight - resultsDiv.clientHeight - resultsDiv.scrollTop;
+                    if (scrollBottom < 100)
+                        resultsDiv.scrollTop = resultsDiv.scrollHeight;
+                }
             }
             while (!isDone);
     
             console.log('Query successful');
+            setErrorText('');
+            setSearch('');
         }
         catch (error) 
         {
@@ -145,8 +161,8 @@ export default function Visualiser({ project }: { project: { id: string, databas
                 display: showResults ? 'flex' : 'none'
             }}
         >
-            {/* <div className='w-full bg-neutral-900 p-4 max-h-[calc(100%-100px)] border-b-[1px] border-b-red-500'>
-                Left Results
+            {/* <div className='w-full bg-neutral-900 p-4 max-h-[calc(100%-100px)]'>
+                Visualiser
             </div> */}
             <div className='w-full flex flex-col gap-5 p-4 max-h-[calc(100%)] pb-[120px] whitespace-pre-line overflow-y-auto border-b-[1px]'>
                 {

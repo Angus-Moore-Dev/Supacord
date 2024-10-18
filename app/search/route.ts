@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { createServerClient } from '@/utils/supabaseServer';
 import { NextRequest } from 'next/server';
-import { OpenAI } from 'openai';
+import OpenAI from 'openai';
 import { SupabaseManagementAPI } from 'supabase-management-js';
 import accessTokenRefresher from '@/utils/accessTokenRefresher';
 
@@ -20,14 +20,19 @@ export async function POST(request: NextRequest)
         return new Response(JSON.stringify({ error: 'User not authenticated' }), { status: 401 });
     }
 
-    const { projectId, searchQuery, chatHistory } = await request.json();
+    const { projectId, searchQuery, chatHistory } = await request.json() as {
+        projectId: string;
+        searchQuery: string;
+        chatHistory: {
+            type: string;
+            content: string;
+        }[];
+    };
     if (!projectId || !searchQuery || !chatHistory) 
     {
         return new Response(JSON.stringify({ error: 'Missing projectId or searchQuery' }), { status: 400 });
     }
 
-
-    console.log(chatHistory);
     const { data: project } = await supabase
         .from('projects')
         .select('*')
@@ -59,58 +64,80 @@ export async function POST(request: NextRequest)
 
     const managementSupabase = new SupabaseManagementAPI({ accessToken: token.accessToken });
 
-    const openAIStream = await openai.chat.completions.create({
+    // Fetch the database schema
+    const schema = project.databaseStructure;
+
+    const tools = [
+        {
+            type: 'function',
+            function: {
+                name: 'generate_sql_queries',
+                description: 'Generates SQL queries based on a given database schema and user question',
+                parameters: {
+                    type: 'object',
+                    properties: {
+                        schema: {
+                            type: 'object',
+                            description: 'JSON object representing the database schema'
+                        },
+                        user_question: {
+                            type: 'string',
+                            description: 'The user\'s question or request for database information'
+                        }
+                    },
+                    required: ['schema', 'user_question']
+                }
+            }
+        }
+    ];
+
+    const messages = [
+        {
+            role: 'system',
+            content: `You are an advanced SQL query generator for PostgreSQL databases. Your primary function is to generate diagnostic and easily understandable SQL queries based on user questions and a provided database schema. Always wrap column and table names in double quotes to handle camelCase names.
+            Generate multiple queries if necessary to satisfy the user's request. Only retrieve relevant columns unless all columns are specifically needed. Use functions and views from the schema when appropriate. For text/number columns that appear to be enums, investigate all possible values before writing your query.
+        
+            If the user references non-existent tables or makes typos, infer their intent if possible. Otherwise, list the available columns and ask for clarification.
+        
+            Your response should be valid PostgreSQL queries only. Do not include explanations or additional text.
+            all schemas, tables and columns must have double quotes around them, like "public"."profiles"."name" for instance.
+        
+            If multiple queries are needed, start your response with "MULTIPLE QUERIES" on a separate line.
+        
+            Example response formats:
+            \`\`\`sql
+            SELECT "name", "email" FROM "users" WHERE "id" = '123';
+            \`\`\`
+        
+            Or for multiple queries:
+            MULTIPLE QUERIES
+            \`\`\`sql
+            SELECT "name", "email" FROM "users" WHERE "id" = '123';
+            SELECT "orderDate", "total" FROM "orders" WHERE "userId" = '123';
+            \`\`\`
+
+            Here is the schema for the database in JSON format. It contains a schema, views, materialized views, and functions,
+            all designed to help you write the most effective SQL queries in line with the user's request. Please use 
+            functions, views and materialized views where appropriate, otherwise use the schema property to generate the SQL queries,
+            as it contains table information, including column names, their types, foreign key relations etc.
+
+            START OF SCHEMA:
+            ${JSON.stringify(schema, null, 2)}
+            END OF SCHEMA
+            `
+        },
+        ...chatHistory.map(message => ({
+            role: message.type === 'user' ? 'user' : 'assistant',
+            content: message.content
+        }))
+    ];
+
+    //@ts-expect-error - stream is not in the types
+    const response = await openai.chat.completions.create({
         model: 'gpt-4o',
-        temperature: 0,
-        messages: [
-            {
-                role: 'system',
-                content: `You are an SQL queries generator. You are to help investigate questions that a user may have, particularly with understanding information within the database. 
-                WRITE QUERIES THAT ARE DESIGNED TO BE EASILY UNDERSTOOD BY A HUMAN, DESIGNED TO BE DIAGNOSTIC AND EXECUTED IMMEDIATELY AFTER YOU WRITE IT (it will be piped straight into a database).
-                WRITE MULTIPLE QUERIES IF YOU NEED TO DO SO TO SATISFY THIS REQUIREMENT.
-                ONLY GET THE RELEVANT COLUMNS THAT ARE NEEDED FOR THE QUERY. DO NOT GET ALL COLUMNS UNLESS YOU BELIEVE IT'S NECESSARY.
-                IF THE SCHEMA HAS FUNCTIONS OR VIEWS, YOU CAN USE THEM IN YOUR QUERY IF YOU BELIEVE IT WILL HELP.
-
-                DO NOT EXPLAIN OR ELABORATE ON THE QUERY. ONLY WRITE THE QUERY. DO NOT WRITE ANYTHING ELSE.
-
-                IF THERE IS A TEXT/NUMBER COLUMN THAT LOOKS LIKE AN ENUM, YOU SHOULD DO SOME INVESTIGATION BY FIGURING OUT WHAT ALL OF THE ENUM VALUES ARE AND THEN USING THAT INFORMATION TO WRITE YOUR QUERY.
-
-                You will be given a JSON structure of the schema ${project.selectedSchema} to generate an SQL query based on the search query provided by the user.
-                An example may be, "Please give me all of the investors that were part of the investment with ID of 202410210". That example would require 3-4 different tables to be interacted with, which you 
-                are provided with in the JSON structure below.
-                YOU ARE TO ONLY OUTPUT SQL QUERIES THAT ARE VALID TO THE SCHEMA. DO NOT DO ANYTHING ELSE, ONLY OUTPUT SQL QUERIES FOR A POSTGRESQL DATABASE.
-
-                IF YOU NEED TO OUTPUT MULTIPLE QUERIES, START YOUR OUTPUT WITH MULTIPLE QUERIES.
-
-                EXAMPLE
-                \`\`\`sql
-                SELECT "name", "email" FROM "users" WHERE "id" = '123';
-                \`\`\`
-
-                EXAMPLE 2
-                MULTIPLE QUERIES
-                \`\`\`sql
-                SELECT "name", "email" FROM "users" WHERE "id" = '123';
-                SELECT "name", "email" FROM "users" WHERE "id" = '456';
-                \`\`\`
-
-                \`\`\`sql
-                SELECT "name", "email" FROM "users" WHERE "id" = '123';
-                \`\`\`
-                
-                Any column used in your query must be wrapped in double quotes. For example, if you are selecting the "name" column from the "users" table, you would write SELECT "name" FROM "users".
-
-                Finally, the user's query may reference tables that are not in the schema or may have a typo. If you can infer what the user meant, you can write a query that you believe the user meant to write.
-                Otherwise, just list out the columns within the tables and ask the user to clarify.
-                
-                The schema structure is as follows in JSON format:
-                ${JSON.stringify(project.databaseStructure)}`
-            },
-            ...chatHistory.map((message: { type: 'user' | 'ai', content: string }) => ({
-                role: message.type === 'user' ? 'user' : 'assistant',
-                content: message.content
-            }))
-        ],
+        messages: messages,
+        tools: tools,
+        tool_choice: 'auto',
         stream: true
     });
 
@@ -119,19 +146,30 @@ export async function POST(request: NextRequest)
     const streamingResponse = new ReadableStream({
         async start(controller) 
         {
-
             if (chatHistory.length > 0)
                 controller.enqueue('\n\n');
 
             let sqlQuery = '';
-            for await (const chunk of openAIStream) 
+            for await (const chunk of response) 
             {
-                const text = chunk.choices[0].delta?.content || '';
-                controller.enqueue(text);
-                sqlQuery += text;
-                fullMessage += text;
+                if (chunk.choices[0]?.delta?.function_call?.arguments) 
+                {
+                    const args = JSON.parse(chunk.choices[0].delta.function_call.arguments);
+                    if (args.user_question) 
+                    {
+                        sqlQuery += args.user_question;
+                        controller.enqueue(args.user_question);
+                        fullMessage += args.user_question;
+                    }
+                }
+                else if (chunk.choices[0]?.delta?.content) 
+                {
+                    const text = chunk.choices[0].delta.content;
+                    controller.enqueue(text);
+                    sqlQuery += text;
+                    fullMessage += text;
+                }
             }
-
 
             try 
             {
@@ -141,11 +179,12 @@ export async function POST(request: NextRequest)
                 {
                     const queries = sqlQuery.replaceAll('MULTIPLE QUERIES', '').split('\n\n').map(query => query
                         .trim()
+                        .replaceAll('MULTIPLE QUERIES', '')
                         .replaceAll('```sql', '')
                         .replaceAll('```', '')
                     ).filter(Boolean);
 
-                    for (const query of queries)
+                    for (const query of queries) 
                     {
                         console.log('Executing query:', query);
                         controller.enqueue('\n\n===EXECUTING QUERY===\n\n');
@@ -164,12 +203,13 @@ export async function POST(request: NextRequest)
                         }
                     }
                 }
-                else
+                else 
                 {
                     controller.enqueue('\n\n===EXECUTING QUERY===\n\n');
                     fullMessage += '\n\n===EXECUTING QUERY===\n\n';
 
                     const result = await managementSupabase.runQuery(project.projectId, sqlQuery
+                        .replaceAll('MULTIPLE QUERIES', '')
                         .replaceAll('```sql', '')
                         .replaceAll('```', '')
                     );
@@ -189,7 +229,6 @@ export async function POST(request: NextRequest)
             }
             catch (error) 
             {
-                // controller.enqueue(encoder.encode(`Error executing query: ${error instanceof Error ? error.message : 'Unknown error'}`));
                 controller.enqueue(`Error executing query: ${error instanceof Error ? error.message : 'Unknown error'}`);
                 fullMessage += `Error executing query: ${error instanceof Error ? error.message : 'Unknown error'}`;
             }
