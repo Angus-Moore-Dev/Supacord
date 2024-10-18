@@ -144,6 +144,11 @@ export default function Visualiser({ project }: { project: { id: string, databas
         if (searchBar)
             searchBar.addEventListener('transitionend', handleTransitionEnd);
 
+        // focus the search input
+        const searchInput = document.getElementById('search-database-input');
+        if (searchInput)
+            searchInput.focus();
+
         return () => 
         {
             if (searchBar)
