@@ -103,6 +103,8 @@ export async function POST(request: NextRequest)
             functions, views and materialized views where appropriate, otherwise use the schema property to generate the SQL queries,
             as it contains table information, including column names, their types, foreign key relations etc.
 
+            WHEN MAKING YOUR SQL QUERY, ALWAYS FETCH THE PRIMARY KEY OF THE TABLES INVOLVED AND CALL IT "PRIMARY_KEY" IN THE RESULTING QUERY.
+
             START OF SCHEMA:
             ${JSON.stringify(schema, null, 2)}
             END OF SCHEMA
@@ -119,6 +121,7 @@ export async function POST(request: NextRequest)
         model: 'gpt-4o',
         messages: messages,
         tools: tools,
+        tool_choice: 'auto'
     });
 
     const streamingResponse = new ReadableStream({
@@ -128,34 +131,50 @@ export async function POST(request: NextRequest)
                 controller.enqueue('\n\n');
 
             const toolCalls = response.choices[0].message.tool_calls;
-            if (!toolCalls || toolCalls.length === 0)
+            if (toolCalls && toolCalls.length > 0)
             {
-                controller.enqueue('OpenAI did not work as expected. Please try again later.');
-                controller.close();
-                return;
-            }
+                const { sqlQuery } = JSON.parse(toolCalls[0].function.arguments) as { sqlQuery: string };
 
-            const { sqlQuery } = JSON.parse(toolCalls[0].function.arguments) as { sqlQuery: string };
-
-            try 
-            {
-                console.log('Executing query:', sqlQuery);
-                controller.enqueue(`\`\`\`sql\n${sqlQuery}\n\`\`\``);
-
-                if (sqlQuery.startsWith('MULTIPLE QUERIES')) 
+                try 
                 {
-                    const queries = sqlQuery.replaceAll('MULTIPLE QUERIES', '').split('\n\n').map(query => query
-                        .trim()
-                        .replaceAll('MULTIPLE QUERIES', '')
-                        .replaceAll('```sql', '')
-                        .replaceAll('```', '')
-                    ).filter(Boolean);
+                    console.log('Executing query:', sqlQuery);
+                    controller.enqueue(`\`\`\`sql\n${sqlQuery}\n\`\`\``);
 
-                    for (const query of queries) 
+                    if (sqlQuery.startsWith('MULTIPLE QUERIES')) 
                     {
-                        console.log('Executing query:', query);
+                        const queries = sqlQuery.replaceAll('MULTIPLE QUERIES', '').split('\n\n').map(query => query
+                            .trim()
+                            .replaceAll('MULTIPLE QUERIES', '')
+                            .replaceAll('```sql', '')
+                            .replaceAll('```', '')
+                        ).filter(Boolean);
+
+                        for (const query of queries) 
+                        {
+                            console.log('Executing query:', query);
+                            controller.enqueue('\n\n===EXECUTING QUERY===\n\n');
+                            const result = await managementSupabase.runQuery(project.projectId, query);
+                            if (Array.isArray(result) && result.length > 0) 
+                            {
+                                const markdownTable = convertToMarkdownTable(result);
+                                controller.enqueue(markdownTable);
+                            }
+                            else 
+                            {
+                                controller.enqueue('No results found.');
+                            }
+                        }
+                    }
+                    else 
+                    {
                         controller.enqueue('\n\n===EXECUTING QUERY===\n\n');
-                        const result = await managementSupabase.runQuery(project.projectId, query);
+
+                        const result = await managementSupabase.runQuery(project.projectId, sqlQuery
+                            .replaceAll('MULTIPLE QUERIES', '')
+                            .replaceAll('```sql', '')
+                            .replaceAll('```', '')
+                        );
+                    
                         if (Array.isArray(result) && result.length > 0) 
                         {
                             const markdownTable = convertToMarkdownTable(result);
@@ -167,30 +186,10 @@ export async function POST(request: NextRequest)
                         }
                     }
                 }
-                else 
+                catch (error) 
                 {
-                    controller.enqueue('\n\n===EXECUTING QUERY===\n\n');
-
-                    const result = await managementSupabase.runQuery(project.projectId, sqlQuery
-                        .replaceAll('MULTIPLE QUERIES', '')
-                        .replaceAll('```sql', '')
-                        .replaceAll('```', '')
-                    );
-                
-                    if (Array.isArray(result) && result.length > 0) 
-                    {
-                        const markdownTable = convertToMarkdownTable(result);
-                        controller.enqueue(markdownTable);
-                    }
-                    else 
-                    {
-                        controller.enqueue('No results found.');
-                    }
+                    controller.enqueue(`Error executing query: ${error instanceof Error ? error.message : 'Unknown error'}`);
                 }
-            }
-            catch (error) 
-            {
-                controller.enqueue(`Error executing query: ${error instanceof Error ? error.message : 'Unknown error'}`);
             }
 
             controller.close();
