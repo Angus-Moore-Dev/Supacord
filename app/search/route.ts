@@ -72,20 +72,16 @@ export async function POST(request: NextRequest)
             type: 'function',
             function: {
                 name: 'generate_sql_queries',
-                description: 'Generates SQL queries based on a given database schema and user question',
+                description: 'Generates SQL queries based on a given database schema and user question. ONLY OUTPUT A VALID SQL STATEMENT',
                 parameters: {
                     type: 'object',
                     properties: {
-                        schema: {
-                            type: 'object',
-                            description: 'JSON object representing the database schema'
-                        },
-                        user_question: {
+                        sqlQuery: {
                             type: 'string',
-                            description: 'The user\'s question or request for database information'
-                        }
+                            description: 'The SQL query to be executed against the postgresql database using the schema provided'
+                        },
                     },
-                    required: ['schema', 'user_question']
+                    required: ['sqlQuery']
                 }
             }
         }
@@ -97,24 +93,10 @@ export async function POST(request: NextRequest)
             content: `You are an advanced SQL query generator for PostgreSQL databases. Your primary function is to generate diagnostic and easily understandable SQL queries based on user questions and a provided database schema. Always wrap column and table names in double quotes to handle camelCase names.
             Generate multiple queries if necessary to satisfy the user's request. Only retrieve relevant columns unless all columns are specifically needed. Use functions and views from the schema when appropriate. For text/number columns that appear to be enums, investigate all possible values before writing your query.
         
-            If the user references non-existent tables or makes typos, infer their intent if possible. Otherwise, list the available columns and ask for clarification.
-        
-            Your response should be valid PostgreSQL queries only. Do not include explanations or additional text.
-            all schemas, tables and columns must have double quotes around them, like "public"."profiles"."name" for instance.
-        
-            If multiple queries are needed, start your response with "MULTIPLE QUERIES" on a separate line.
-        
-            Example response formats:
-            \`\`\`sql
-            SELECT "name", "email" FROM "users" WHERE "id" = '123';
-            \`\`\`
-        
-            Or for multiple queries:
-            MULTIPLE QUERIES
-            \`\`\`sql
-            SELECT "name", "email" FROM "users" WHERE "id" = '123';
-            SELECT "orderDate", "total" FROM "orders" WHERE "userId" = '123';
-            \`\`\`
+            If the user references tables/columns that are non-existant or are close (such as profile picture being "profilePictureURL" or log type "severity"), then use your best judgement to generate the query. If the user's question is ambiguous, ask for clarification.
+            If a column is a text field and you need to use it as an enum or something, then add to your query a way to get the distinct values from that first. For example
+            the user might ask "How many types of each type happened in the changelog in the past 24 hours?". In this case, you need to get the severity column,
+            get the distinct values from it and then count how many of each type happened in the past 24 hours. This is just an example, but you get the idea.
 
             Here is the schema for the database in JSON format. It contains a schema, views, materialized views, and functions,
             all designed to help you write the most effective SQL queries in line with the user's request. Please use 
@@ -128,7 +110,7 @@ export async function POST(request: NextRequest)
         },
         ...chatHistory.map(message => ({
             role: message.type === 'user' ? 'user' : 'assistant',
-            content: message.content
+            content: `Please generate an SQL query for postgresql based on the following user input: ${message.content}`
         }))
     ];
 
@@ -137,11 +119,7 @@ export async function POST(request: NextRequest)
         model: 'gpt-4o',
         messages: messages,
         tools: tools,
-        tool_choice: 'auto',
-        stream: true
     });
-
-    let fullMessage: string = '';
 
     const streamingResponse = new ReadableStream({
         async start(controller) 
@@ -149,31 +127,20 @@ export async function POST(request: NextRequest)
             if (chatHistory.length > 0)
                 controller.enqueue('\n\n');
 
-            let sqlQuery = '';
-            for await (const chunk of response) 
+            const toolCalls = response.choices[0].message.tool_calls;
+            if (!toolCalls || toolCalls.length === 0)
             {
-                if (chunk.choices[0]?.delta?.function_call?.arguments) 
-                {
-                    const args = JSON.parse(chunk.choices[0].delta.function_call.arguments);
-                    if (args.user_question) 
-                    {
-                        sqlQuery += args.user_question;
-                        controller.enqueue(args.user_question);
-                        fullMessage += args.user_question;
-                    }
-                }
-                else if (chunk.choices[0]?.delta?.content) 
-                {
-                    const text = chunk.choices[0].delta.content;
-                    controller.enqueue(text);
-                    sqlQuery += text;
-                    fullMessage += text;
-                }
+                controller.enqueue('OpenAI did not work as expected. Please try again later.');
+                controller.close();
+                return;
             }
+
+            const { sqlQuery } = JSON.parse(toolCalls[0].function.arguments) as { sqlQuery: string };
 
             try 
             {
-                console.log(sqlQuery);
+                console.log('Executing query:', sqlQuery);
+                controller.enqueue(`\`\`\`sql\n${sqlQuery}\n\`\`\``);
 
                 if (sqlQuery.startsWith('MULTIPLE QUERIES')) 
                 {
@@ -188,25 +155,21 @@ export async function POST(request: NextRequest)
                     {
                         console.log('Executing query:', query);
                         controller.enqueue('\n\n===EXECUTING QUERY===\n\n');
-                        fullMessage += '\n\n===EXECUTING QUERY===\n\n';
                         const result = await managementSupabase.runQuery(project.projectId, query);
                         if (Array.isArray(result) && result.length > 0) 
                         {
                             const markdownTable = convertToMarkdownTable(result);
                             controller.enqueue(markdownTable);
-                            fullMessage += markdownTable;
                         }
                         else 
                         {
                             controller.enqueue('No results found.');
-                            fullMessage += 'No results found.';
                         }
                     }
                 }
                 else 
                 {
                     controller.enqueue('\n\n===EXECUTING QUERY===\n\n');
-                    fullMessage += '\n\n===EXECUTING QUERY===\n\n';
 
                     const result = await managementSupabase.runQuery(project.projectId, sqlQuery
                         .replaceAll('MULTIPLE QUERIES', '')
@@ -218,27 +181,22 @@ export async function POST(request: NextRequest)
                     {
                         const markdownTable = convertToMarkdownTable(result);
                         controller.enqueue(markdownTable);
-                        fullMessage += markdownTable;
                     }
                     else 
                     {
                         controller.enqueue('No results found.');
-                        fullMessage += 'No results found.';
                     }
                 }
             }
             catch (error) 
             {
                 controller.enqueue(`Error executing query: ${error instanceof Error ? error.message : 'Unknown error'}`);
-                fullMessage += `Error executing query: ${error instanceof Error ? error.message : 'Unknown error'}`;
             }
 
-            console.log(fullMessage);
             controller.close();
         },
     });
 
-    console.log(fullMessage);
 
     return new Response(streamingResponse, { headers: { 'Content-Type': 'text/plain' }});
 }
