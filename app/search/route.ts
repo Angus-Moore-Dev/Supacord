@@ -159,6 +159,8 @@ export async function POST(request: NextRequest)
             Remember, your output will be directly used to query the database. Therefore, you must only generate valid SQL statements that adhere to PostgreSQL syntax. Your role is critical in bridging the gap between user intent and database interaction, so strive for accuracy, efficiency, and clarity in all your responses.
             Wrap all columns and tables in double quotes in case of camelCase or special characters used in the column or table names.
 
+            all tables, functions, views, materialized views, triggers, and indexes are under the schema: "${project.selectedSchema}". Do not reference any other schema unless it's through a foreign key relationship.
+
             The structure of the schema is as follows:
             {
                 schema: Array<{
