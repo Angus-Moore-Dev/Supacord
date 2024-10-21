@@ -72,16 +72,36 @@ export async function POST(request: NextRequest)
             type: 'function',
             function: {
                 name: 'generate_sql_queries',
-                description: 'Generates SQL queries based on a given database schema and user question. ONLY OUTPUT A VALID SQL STATEMENT',
+                description: 'Generates SQL queries based on a given database schema and user question. ONLY OUTPUT VALID SQL STATEMENTS',
                 parameters: {
                     type: 'object',
                     properties: {
                         sqlQuery: {
                             type: 'string',
-                            description: 'The SQL query to be executed against the postgresql database using the schema provided'
+                            description: 'The SQL query to be executed against the PostgreSQL database using the schema provided'
+                        },
+                        type: {
+                            type: 'array',
+                            description: 'The recommended visualization format(s) for the query results',
+                            items: {
+                                type: 'string',
+                                enum: ['text', 'table', 'bar chart', 'line chart', 'pie chart', 'scatter plot', 'time series', 'heatmap', 'histogram']
+                            }
+                        },
+                        chainedQueries: {
+                            type: 'array',
+                            items: {
+                                type: 'object',
+                                properties: {
+                                    sqlQuery: { type: 'string' },
+                                    type: { type: 'array', items: { type: 'string' } },
+                                    queryExplanation: { type: 'string' }
+                                }
+                            },
+                            description: 'An array of related queries that should be executed in sequence'
                         },
                     },
-                    required: ['sqlQuery']
+                    required: ['sqlQuery', 'type']
                 }
             }
         }
@@ -90,24 +110,106 @@ export async function POST(request: NextRequest)
     const messages = [
         {
             role: 'system',
-            content: `You are an advanced SQL query generator for PostgreSQL databases. Your primary function is to generate diagnostic and easily understandable SQL queries based on user questions and a provided database schema. Always wrap column and table names in double quotes to handle camelCase names.
-            Generate multiple queries if necessary to satisfy the user's request. Only retrieve relevant columns unless all columns are specifically needed. Use functions and views from the schema when appropriate. For text/number columns that appear to be enums, investigate all possible values before writing your query.
-        
-            If the user references tables/columns that are non-existant or are close (such as profile picture being "profilePictureURL" or log type "severity"), then use your best judgement to generate the query. If the user's question is ambiguous, ask for clarification.
-            If a column is a text field and you need to use it as an enum or something, then add to your query a way to get the distinct values from that first. For example
-            the user might ask "How many types of each type happened in the changelog in the past 24 hours?". In this case, you need to get the severity column,
-            get the distinct values from it and then count how many of each type happened in the past 24 hours. This is just an example, but you get the idea.
+            content: `
+            You are an advanced SQL query generator designed to act as a direct interface between users and a specific PostgreSQL database. Your primary function is to translate natural language questions into accurate and efficient SQL queries that will be automatically executed against the database. Your output must be precise and ready for immediate use. Follow these guidelines:
 
-            Here is the schema for the database in JSON format. It contains a schema, views, materialized views, and functions,
-            all designed to help you write the most effective SQL queries in line with the user's request. Please use 
-            functions, views and materialized views where appropriate, otherwise use the schema property to generate the SQL queries,
-            as it contains table information, including column names, their types, foreign key relations etc.
+            1. Query Accuracy and Direct Execution:
+            - Generate SQL queries that are valid, accurate, and immediately executable against the given database schema.
+            - Your queries will be used directly to interact with the database, so ensure they are free from syntax errors and logically correct.
+            - Identify and utilize columns that could be used as enums (e.g., status types, categories) for more efficient querying.
 
-            WHEN MAKING YOUR SQL QUERY, ALWAYS FETCH THE PRIMARY KEY OF THE TABLES INVOLVED AND CALL IT "PRIMARY_KEY" IN THE RESULTING QUERY.
+            2. User-Database Interface:
+            - Act as a translator between natural language user inputs and SQL queries.
+            - Interpret user intentions accurately, even when questions are ambiguous or incomplete.
+            - If a user question is unclear, ask for clarification before generating a query.
 
-            START OF SCHEMA:
+            3. Query Chaining and Independence:
+            - When necessary, create multiple SQL queries that can be chained together to achieve complex goals.
+            - Ensure each query is independently executable.
+            - If a task requires multiple dependent operations, combine them into a single query using subqueries or CTEs.
+            - Separate independent operations into distinct queries.
+
+            4. Data Visualization Recommendations:
+            - For each query, suggest the most appropriate visualization format based on the data being fetched:
+                a. Use bar charts for comparisons across categories (e.g., error counts by severity).
+                b. Recommend line charts for time-based data with clear X and Y axes (e.g., errors per hour over 24 hours).
+                c. Suggest tables for detailed, multi-column data (e.g., user assessments).
+                d. Consider pie charts for showing composition or proportion.
+                e. Propose scatter plots for showing relationships between two variables.
+                f. Recommend time series charts for data with timestamps.
+
+            5. Schema Awareness and Optimization:
+            - Utilize your knowledge of the database schema to create optimal queries.
+            - Leverage appropriate joins, indexes, and table relationships.
+            - Write queries with performance in mind, using appropriate indexing and avoiding unnecessary table scans.
+            - Use aggregations and window functions when dealing with large datasets.
+
+            6. Error Handling and Edge Cases:
+            - Consider potential null values, empty sets, or edge cases in your queries.
+            - Provide appropriate error handling or default values where necessary.
+
+            7. Query Explanation:
+            - Provide clear explanations of the query logic and any assumptions made.
+            - If asked, break down complex queries to help users understand the approach.
+
+            8. Security and Access Control:
+            - Be mindful of potential security implications in your queries.
+            - Avoid generating queries that could expose sensitive data or compromise database integrity.
+
+            Remember, your output will be directly used to query the database. Therefore, you must only generate valid SQL statements that adhere to PostgreSQL syntax. Your role is critical in bridging the gap between user intent and database interaction, so strive for accuracy, efficiency, and clarity in all your responses.
+            Wrap all columns and tables in double quotes in case of camelCase or special characters used in the column or table names.
+
+            The structure of the schema is as follows:
+            {
+                schema: Array<{
+                    table_name: string;
+                    columns: Array<{
+                    column_name: string;
+                    data_type: string;
+                    character_maximum_length: number | null;
+                    is_nullable: string;
+                    column_default: string | null;
+                    is_primary_key: boolean;
+                    foreign_key: {
+                        foreign_table_schema: string;
+                        foreign_table_name: string;
+                        foreign_column_name: string;
+                    } | null;
+                    }>;
+                }>;
+                functions: Array<{
+                    function_name: string;
+                    return_type: string;
+                    argument_types: string;
+                    function_type: 'function' | 'procedure' | 'aggregate' | 'window';
+                }>;
+                views: Array<{
+                    view_name: string;
+                    view_definition: string;
+                }>;
+                materialized_views: Array<{
+                    materialized_view_name: string;
+                    definition: string;
+                }>;
+                triggers: Array<{
+                    trigger_name: string;
+                    event_manipulation: string;
+                    event_object_table: string;
+                    action_statement: string;
+                    action_timing: string;
+                }>;
+                indexes: Array<{
+                    table_name: string;
+                    index_name: string;
+                    index_definition: string;
+                }>;
+            }
+
+            Here is the schema:
+            
+            \`\`\`json
             ${JSON.stringify(schema, null, 2)}
-            END OF SCHEMA
+            \`\`\`
             `
         },
         ...chatHistory.map(message => ({
@@ -121,7 +223,7 @@ export async function POST(request: NextRequest)
         model: 'gpt-4o',
         messages: messages,
         tools: tools,
-        tool_choice: 'auto'
+        tool_choice: 'required'
     });
 
     const streamingResponse = new ReadableStream({
@@ -133,7 +235,19 @@ export async function POST(request: NextRequest)
             const toolCalls = response.choices[0].message.tool_calls;
             if (toolCalls && toolCalls.length > 0)
             {
-                const { sqlQuery } = JSON.parse(toolCalls[0].function.arguments) as { sqlQuery: string };
+                const { 
+                    sqlQuery, 
+                    type,
+                    chainedQueries,
+                } = JSON.parse(toolCalls[0].function.arguments) as { 
+                    sqlQuery: string,
+                    type: string[],
+                    chainedQueries: { sqlQuery: string, type: string[], queryExplanation: string }[],
+                };
+
+                console.log('SQL Query:', sqlQuery);
+                console.log('Type:', type);
+                console.log('Chained Queries:', chainedQueries);
 
                 try 
                 {

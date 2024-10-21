@@ -15,7 +15,8 @@ export async function GET()
     const { data: accessTokens, error } = await supabase
         .from('supabase_access_tokens')
         .select('*')
-        .eq('profileId', user.id);
+        .eq('profileId', user.id)
+        .order('createdAt', { ascending: true });
 
     if (error)
     {
