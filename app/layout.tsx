@@ -5,6 +5,8 @@ import './globals.css';
 import { ColorSchemeScript, MantineProvider } from '@mantine/core';
 import { Raleway } from 'next/font/google';
 import { Notifications } from '@mantine/notifications';
+import { Analytics } from '@vercel/analytics/react';
+
 const inter = Raleway({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
@@ -32,6 +34,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                     <Notifications position='bottom-right' />
                     {children}
                 </MantineProvider>
+                <Analytics />
             </body>
         </html>
     );
