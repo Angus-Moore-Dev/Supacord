@@ -253,7 +253,6 @@ export async function POST(request: NextRequest)
 
                 try 
                 {
-                    console.log('Executing query:', sqlQuery);
                     controller.enqueue(`\`\`\`sql\n${sqlQuery}\n\`\`\``);
 
                     if (sqlQuery.startsWith('MULTIPLE QUERIES')) 
@@ -268,7 +267,6 @@ export async function POST(request: NextRequest)
                         for (const query of queries) 
                         {
                             console.log('Executing query:', query);
-                            controller.enqueue('\n\n===EXECUTING QUERY===\n\n');
                             const result = await managementSupabase.runQuery(project.projectId, query);
                             if (Array.isArray(result) && result.length > 0) 
                             {
@@ -283,7 +281,6 @@ export async function POST(request: NextRequest)
                     }
                     else 
                     {
-                        controller.enqueue('\n\n===EXECUTING QUERY===\n\n');
 
                         const result = await managementSupabase.runQuery(project.projectId, sqlQuery
                             .replaceAll('MULTIPLE QUERIES', '')

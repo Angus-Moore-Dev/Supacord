@@ -48,7 +48,9 @@ export default function Visualiser({ project }: { project: { id: string, databas
                 body: JSON.stringify({
                     projectId: projectDetails.id,
                     searchQuery: search,
-                    chatHistory: [...searchResults, { type: 'user', content: search }],
+                    // chatHistory: [...searchResults, { type: 'user', content: search }],
+                    // chat history should be the last 5 user messages
+                    chatHistory: [...searchResults, { type: 'user', content: search }].slice(-5)
                 }),
             });
 
@@ -166,10 +168,10 @@ export default function Visualiser({ project }: { project: { id: string, databas
                 display: showResults ? 'flex' : 'none'
             }}
         >
-            {/* <div className='w-full bg-neutral-900 p-4 max-h-[calc(100%-100px)]'>
+            <div className='w-2/3 bg-neutral-900 p-4 max-h-[calc(100%-100px)]'>
                 Visualiser
-            </div> */}
-            <div className='w-full flex flex-col gap-5 p-4 max-h-[calc(100%)] pb-[120px] whitespace-pre-line overflow-y-auto border-b-[1px]'>
+            </div>
+            <div className='w-1/3 flex flex-col gap-5 p-4 max-h-[calc(100%)] pb-[120px] whitespace-pre-line overflow-y-auto border-b-[1px] break-all'>
                 {
                     searchResults.map((result, index) =>
                     {
@@ -183,7 +185,7 @@ export default function Visualiser({ project }: { project: { id: string, databas
                             return <Markdown
                                 key={index}
                                 remarkPlugins={[remarkGfm]}
-                                className='markdown'
+                                className='markdown max-w-full break-all break-words overflow-x-auto'
                             >
                                 {result.content}
                             </Markdown>;

@@ -87,3 +87,9 @@ h6 {
     line-height: 1.5;
   }
 }
+
+/* React Markdown */
+.reactMarkDown {
+  max-width: 100%;
+  word-break: break-all;
+}
