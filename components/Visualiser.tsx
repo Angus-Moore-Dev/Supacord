@@ -48,8 +48,6 @@ export default function Visualiser({ project }: { project: { id: string, databas
                 body: JSON.stringify({
                     projectId: projectDetails.id,
                     searchQuery: search,
-                    // chatHistory: [...searchResults, { type: 'user', content: search }],
-                    // chat history should be the last 5 user messages
                     chatHistory: [...searchResults, { type: 'user', content: search }].slice(-5)
                 }),
             });
@@ -171,7 +169,7 @@ export default function Visualiser({ project }: { project: { id: string, databas
             <div className='w-3/5 p-4 max-h-[calc(100%-100px)]'>
                 Visualiser
             </div>
-            <div className='bg-neutral-900 w-2/5 flex flex-col gap-5 p-4 max-h-[calc(100%-130px)] mt-[10px] overflow-y-auto border-l-[1px] border-y-[1px] border-neutral-700 rounded-l-2xl'>
+            <div className='bg-black w-2/5 flex flex-col gap-5 p-4 max-h-[calc(100%-130px)] mt-[10px] overflow-y-auto border-l-[1px] border-y-[1px] border-neutral-700 rounded-l-2xl'>
                 {searchResults.map((result, index) => 
                 {
                     if (result.type === 'user') 
