@@ -88,8 +88,30 @@ h6 {
   }
 }
 
-/* React Markdown */
-.reactMarkDown {
+.markdown {
+  width: 100%;
   max-width: 100%;
-  word-break: break-all;
+}
+
+.markdown > * {
+  max-width: 100%;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  word-break: break-word;
+}
+
+.markdown pre {
+  max-width: 100%;
+  white-space: pre-wrap;
+}
+
+.markdown code {
+  max-width: 100%;
+  white-space: pre-wrap;
+}
+
+.markdown table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
 }

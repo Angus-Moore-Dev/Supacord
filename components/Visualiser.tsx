@@ -168,29 +168,63 @@ export default function Visualiser({ project }: { project: { id: string, databas
                 display: showResults ? 'flex' : 'none'
             }}
         >
-            <div className='w-2/3 bg-neutral-900 p-4 max-h-[calc(100%-100px)]'>
+            <div className='w-3/5 p-4 max-h-[calc(100%-100px)]'>
                 Visualiser
             </div>
-            <div className='w-1/3 flex flex-col gap-5 p-4 max-h-[calc(100%)] pb-[120px] whitespace-pre-line overflow-y-auto border-b-[1px] break-all'>
+            <div className='bg-neutral-900 w-2/5 flex flex-col gap-5 p-4 max-h-[calc(100%-130px)] mt-[10px] overflow-y-auto border-l-[1px] border-y-[1px] border-neutral-700 rounded-l-2xl'>
+                {searchResults.map((result, index) => 
                 {
-                    searchResults.map((result, index) =>
+                    if (result.type === 'user') 
                     {
-                        if (result.type === 'user')
-                        {
-                            return <div key={index} className='w-full p-4 px-8 bg-white text-black rounded-lg shadow-lg whitespace-pre-line'>
-                                {result.content}
-                            </div>;
-                        }
-                        else
-                            return <Markdown
-                                key={index}
-                                remarkPlugins={[remarkGfm]}
-                                className='markdown max-w-full break-all break-words overflow-x-auto'
+                        return (
+                            <div 
+                                key={index} 
+                                className='w-full p-4 px-8 bg-white text-black rounded-lg shadow-lg whitespace-pre-line'
                             >
+                                <b>You Wrote:</b>
+                                <br />
                                 {result.content}
-                            </Markdown>;
-                    })
-                }
+                            </div>
+                        );
+                    }
+                    else 
+                    {
+                        return (
+                            <div key={index} className="w-full max-w-full">
+                                <Markdown
+                                    remarkPlugins={[remarkGfm]}
+                                    className='markdown prose prose-sm max-w-none'
+                                    components={{
+                                        code({ className, children, ...props }) 
+                                        {
+                                            return (
+                                                <code
+                                                    className={`${className} whitespace-pre-wrap break-words`}
+                                                    {...props}
+                                                >
+                                                    {children}
+                                                </code>
+                                            );
+                                        },
+                                        pre({ children, ...props }) 
+                                        {
+                                            return (
+                                                <pre
+                                                    className="overflow-x-auto whitespace-pre-wrap break-words rounded-lg p-4"
+                                                    {...props}
+                                                >
+                                                    {children}
+                                                </pre>
+                                            );
+                                        }
+                                    }}
+                                >
+                                    {result.content}
+                                </Markdown>
+                            </div>
+                        );
+                    }
+                })}
             </div>
         </div>
         <div

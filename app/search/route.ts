@@ -2,7 +2,7 @@
 import { createServerClient } from '@/utils/supabaseServer';
 import { NextRequest } from 'next/server';
 import OpenAI from 'openai';
-import { SupabaseManagementAPI } from 'supabase-management-js';
+import { isSupabaseError, SupabaseManagementAPI } from 'supabase-management-js';
 import accessTokenRefresher from '@/utils/accessTokenRefresher';
 
 const openai = new OpenAI({
@@ -76,10 +76,6 @@ export async function POST(request: NextRequest)
                 parameters: {
                     type: 'object',
                     properties: {
-                        sqlQuery: {
-                            type: 'string',
-                            description: 'The SQL query to be executed against the PostgreSQL database using the schema provided'
-                        },
                         type: {
                             type: 'array',
                             description: 'The recommended visualization format(s) for the query results',
@@ -100,6 +96,11 @@ export async function POST(request: NextRequest)
                             },
                             description: 'An array of related queries that should be executed in sequence'
                         },
+                        primaryKey: {
+                            type: 'array',
+                            description: 'the primary key of the table being queried (for instance, public.profiles.id or public.investments.id)',
+                            items: { type: 'string' }
+                        }
                     },
                     required: ['sqlQuery', 'type']
                 }
@@ -111,7 +112,7 @@ export async function POST(request: NextRequest)
         {
             role: 'system',
             content: `
-            You are an advanced SQL query generator designed to act as a direct interface between users and a specific PostgreSQL database. Your primary function is to translate natural language questions into accurate and efficient SQL queries that will be automatically executed against the database. Your output must be precise and ready for immediate use. Follow these guidelines:
+            You are an advanced SQL query generator designed to act as a direct interface between users and a specific PostgreSQL database. Your primary function is to translate natural language questions into accurate and efficient SQL queries that will be automatically executed against the database. Your output must be precise, VALID SQL and ready for immediate use. Follow these guidelines:
 
             1. Query Accuracy and Direct Execution:
             - Generate SQL queries that are valid, accurate, and immediately executable against the given database schema.
@@ -160,6 +161,8 @@ export async function POST(request: NextRequest)
             Wrap all columns and tables in double quotes in case of camelCase or special characters used in the column or table names.
 
             all tables, functions, views, materialized views, triggers, and indexes are under the schema: "${project.selectedSchema}". Do not reference any other schema unless it's through a foreign key relationship.
+            When returning a row from a table, ensure that the primary key comes first and is labelled as "schema.table_name.key". We need this for additional functionality for data visualisation (so we can recognise
+            what nodes are being referred to in the graph).
 
             The structure of the schema is as follows:
             {
@@ -225,7 +228,8 @@ export async function POST(request: NextRequest)
         model: 'gpt-4o',
         messages: messages,
         tools: tools,
-        tool_choice: 'required'
+        tool_choice: 'required',
+        temperature: 0
     });
 
     const streamingResponse = new ReadableStream({
@@ -238,55 +242,32 @@ export async function POST(request: NextRequest)
             if (toolCalls && toolCalls.length > 0)
             {
                 const { 
-                    sqlQuery, 
                     type,
                     chainedQueries,
+                    primaryKey
                 } = JSON.parse(toolCalls[0].function.arguments) as { 
-                    sqlQuery: string,
                     type: string[],
                     chainedQueries: { sqlQuery: string, type: string[], queryExplanation: string }[],
+                    primaryKey: string[]
                 };
 
-                console.log('SQL Query:', sqlQuery);
                 console.log('Type:', type);
                 console.log('Chained Queries:', chainedQueries);
+                console.log('Primary Key:', primaryKey);
 
                 try 
                 {
-                    controller.enqueue(`\`\`\`sql\n${sqlQuery}\n\`\`\``);
-
-                    if (sqlQuery.startsWith('MULTIPLE QUERIES')) 
+                    for (const sqlQuery of chainedQueries)
                     {
-                        const queries = sqlQuery.replaceAll('MULTIPLE QUERIES', '').split('\n\n').map(query => query
-                            .trim()
-                            .replaceAll('MULTIPLE QUERIES', '')
-                            .replaceAll('```sql', '')
-                            .replaceAll('```', '')
-                        ).filter(Boolean);
+                        // controller.enqueue(`\`\`\`sql\n${sqlQuery.sqlQuery}\n\`\`\``);
 
-                        for (const query of queries) 
-                        {
-                            console.log('Executing query:', query);
-                            const result = await managementSupabase.runQuery(project.projectId, query);
-                            if (Array.isArray(result) && result.length > 0) 
-                            {
-                                const markdownTable = convertToMarkdownTable(result);
-                                controller.enqueue(markdownTable);
-                            }
-                            else 
-                            {
-                                controller.enqueue('No results found.');
-                            }
-                        }
-                    }
-                    else 
-                    {
-
-                        const result = await managementSupabase.runQuery(project.projectId, sqlQuery
-                            .replaceAll('MULTIPLE QUERIES', '')
-                            .replaceAll('```sql', '')
-                            .replaceAll('```', '')
+                        const result = await managementSupabase.runQuery(
+                            project.projectId, 
+                            sqlQuery.sqlQuery
                         );
+
+                        // we want to get the primary key entities from what was returned
+                        console.log(result);
                     
                         if (Array.isArray(result) && result.length > 0) 
                         {
@@ -301,6 +282,10 @@ export async function POST(request: NextRequest)
                 }
                 catch (error) 
                 {
+                    if (isSupabaseError(error))
+                    {
+                        console.error(error);
+                    }
                     controller.enqueue(`Error executing query: ${error instanceof Error ? error.message : 'Unknown error'}`);
                 }
             }
@@ -317,13 +302,24 @@ function convertToMarkdownTable(data: Record<string, any>[]): string
 {
     if (!data || data.length === 0) return 'No results found.';
 
+    // Add headers
     const headers = Object.keys(data[0]);
-    let markdownTable = `| ${headers.join(' | ')} |\n| ${headers.map(() => '---').join(' | ')} |\n`;
+    let markdownTable = `| ${headers.join(' | ')} |\n`;
+    
+    // Add separator row
+    markdownTable += `| ${headers.map(() => '---').join(' | ')} |\n`;
 
+    // Add data rows
     for (const row of data) 
     {
-        markdownTable += `| ${headers.map(header => row[header] !== null && row[header] !== undefined ? String(row[header]) : '').join(' | ')} |\n`;
+        markdownTable += `| ${headers.map(header => 
+        {
+            const value = row[header];
+            if (value === null || value === undefined) return '';
+            // Escape pipe characters in the content to prevent table formatting issues
+            return String(value).replace(/\|/g, '\\|');
+        }).join(' | ')} |\n`;
     }
 
-    return `${markdownTable}\n\n`;
+    return markdownTable;
 }
