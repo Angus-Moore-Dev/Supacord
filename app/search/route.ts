@@ -138,6 +138,7 @@ export async function POST(request: NextRequest)
                 d. Consider pie charts for showing composition or proportion.
                 e. Propose scatter plots for showing relationships between two variables.
                 f. Recommend time series charts for data with timestamps.
+                g. Suggest radial charts for categorical data where a bar chart is not suitable.
 
             5. Schema Awareness and Optimization:
             - Utilize your knowledge of the database schema to create optimal queries.
@@ -267,7 +268,80 @@ export async function POST(request: NextRequest)
                         );
 
                         // we want to get the primary key entities from what was returned
-                        console.log(result);
+                        // console.log(result);
+
+                        // we want to look for rows that contain the primary keys from the results.
+                        /*
+                            Primary Key: [ 'public.profiles.id', 'public.post.id' ]
+                            [
+                                {
+                                    'public.profiles.id': 'f2c75438-261c-4c50-8ba1-532e6ce6d498',
+                                    name: 'Joseph Krebs',
+                                    handle: 'josephkrebs',
+                                    'public.post.id': null,
+                                    title: null,
+                                    createdAt: null
+                                },
+                                {
+                                    'public.profiles.id': 'c202cdef-f17c-4a2a-add3-31fdb6b5f478',
+                                    name: 'Angus Moore',
+                                    handle: 'angus',
+                                    'public.post.id': 'NamelessMonke-by-Jarman-Zaeh-1ea20e1f1a10',
+                                    title: 'Nameless/Monke by Jarman Zaeh',
+                                    createdAt: '2024-07-20 12:40:12.421638+00'
+                                },
+                                {
+                                    'public.profiles.id': '8f70e969-09a7-4f46-9c0e-62fee657cb75',
+                                    name: 'Adam Fittler',
+                                    handle: 'adamfittler',
+                                    'public.post.id': null,
+                                    title: null,
+                                    createdAt: null
+                                }
+                            ]
+                        */
+
+                        const primaryKeyValues: { primaryKey: string, ids: string[] }[] = [];
+                        for (const row of result as unknown as Record<string, any>[])
+                        {
+                            // const primaryKeyValues = primaryKey.map(pk => row[pk]);
+                            // console.log('Primary Key Values:', primaryKeyValues);
+
+                            // it needs to be formatted as a type: { primaryKey: string, ids: string[] }[]
+                            // const primaryKeyValuesIndex = primaryKeyValues.findIndex(pk => pk.primaryKey === primaryKey[0]);
+                            // if (primaryKeyValuesIndex === -1)
+                            // {
+                            //     primaryKeyValues.push({
+                            //         primaryKey: primaryKey[0],
+                            //         ids: [row[primaryKey[0]]]
+                            //     });
+                            // }
+                            // else
+                            // {
+                            //     primaryKeyValues[primaryKeyValuesIndex].ids.push(row[primaryKey[0]]);
+                            // }
+
+                            for (const pk of primaryKey)
+                            {
+                                const primaryKeyValuesIndex = primaryKeyValues.findIndex(pkv => pkv.primaryKey === pk);
+                                if (primaryKeyValuesIndex === -1)
+                                {
+                                    // console.log('Primary Key:', pk);
+                                    // console.log('Primary Key Value:', row[pk]);
+                                    // console.log('Row:', row);
+                                    primaryKeyValues.push({
+                                        primaryKey: pk,
+                                        ids: [row[pk]]
+                                    });
+                                }
+                                else
+                                {
+                                    primaryKeyValues[primaryKeyValuesIndex].ids.push(row[pk]);
+                                }
+                            }
+                        }
+
+                        console.log('Primary Key Values:', primaryKeyValues);
                     
                         if (Array.isArray(result) && result.length > 0) 
                         {

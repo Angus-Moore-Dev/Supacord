@@ -166,7 +166,7 @@ export default function Visualiser({ project }: { project: { id: string, databas
                 display: showResults ? 'flex' : 'none'
             }}
         >
-            <div className='w-3/5 p-4 max-h-[calc(100%-100px)]'>
+            <div className='w-3/5 p-4 max-h-[calc(100%-100px)] '>
                 Visualiser
             </div>
             <div className='bg-black w-2/5 flex flex-col gap-5 p-4 max-h-[calc(100%-130px)] mt-[10px] overflow-y-auto border-l-[1px] border-y-[1px] border-neutral-700 rounded-l-2xl'>
