@@ -4,6 +4,7 @@ import { NextRequest } from 'next/server';
 import OpenAI from 'openai';
 import { isSupabaseError, SupabaseManagementAPI } from 'supabase-management-js';
 import accessTokenRefresher from '@/utils/accessTokenRefresher';
+import { PrimaryKeyEntities } from '@/lib/global.types';
 
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
@@ -129,8 +130,10 @@ export async function POST(request: NextRequest)
             - Ensure each query is independently executable.
             - If a task requires multiple dependent operations, combine them into a single query using subqueries or CTEs.
             - Separate independent operations into distinct queries.
+            - Any foreign key or primary key relationship must be defined as "schema.table.column", e.g. "public"."reviews"."profileId" => "public"."profiles"."id" or "public"."investments"."createdBy" => "public"."profiles"."id".
+            This is necessary for the graph visualisation tool to understand the relationships between nodes.
 
-            4. Data Visualization Recommendations:
+            4. Data Visualization Requirements:
             - For each query, suggest the most appropriate visualization format based on the data being fetched:
                 a. Use bar charts for comparisons across categories (e.g., error counts by severity).
                 b. Recommend line charts for time-based data with clear X and Y axes (e.g., errors per hour over 24 hours).
@@ -154,16 +157,12 @@ export async function POST(request: NextRequest)
             - Provide clear explanations of the query logic and any assumptions made.
             - If asked, break down complex queries to help users understand the approach.
 
-            8. Security and Access Control:
-            - Be mindful of potential security implications in your queries.
-            - Avoid generating queries that could expose sensitive data or compromise database integrity.
-
             Remember, your output will be directly used to query the database. Therefore, you must only generate valid SQL statements that adhere to PostgreSQL syntax. Your role is critical in bridging the gap between user intent and database interaction, so strive for accuracy, efficiency, and clarity in all your responses.
             Wrap all columns and tables in double quotes in case of camelCase or special characters used in the column or table names.
 
             all tables, functions, views, materialized views, triggers, and indexes are under the schema: "${project.selectedSchema}". Do not reference any other schema unless it's through a foreign key relationship.
             When returning a row from a table, ensure that the primary key comes first and is labelled as "schema.table_name.key". We need this for additional functionality for data visualisation (so we can recognise
-            what nodes are being referred to in the graph).
+            what nodes are being referred to in the graph). For instance, "profiles.id" would be "public"."profiles"."id", or "investments.investmentNumberId" would be "public"."investments"."investmentNumberId".
 
             The structure of the schema is as follows:
             {
@@ -267,68 +266,14 @@ export async function POST(request: NextRequest)
                             sqlQuery.sqlQuery
                         );
 
-                        // we want to get the primary key entities from what was returned
-                        // console.log(result);
-
-                        // we want to look for rows that contain the primary keys from the results.
-                        /*
-                            Primary Key: [ 'public.profiles.id', 'public.post.id' ]
-                            [
-                                {
-                                    'public.profiles.id': 'f2c75438-261c-4c50-8ba1-532e6ce6d498',
-                                    name: 'Joseph Krebs',
-                                    handle: 'josephkrebs',
-                                    'public.post.id': null,
-                                    title: null,
-                                    createdAt: null
-                                },
-                                {
-                                    'public.profiles.id': 'c202cdef-f17c-4a2a-add3-31fdb6b5f478',
-                                    name: 'Angus Moore',
-                                    handle: 'angus',
-                                    'public.post.id': 'NamelessMonke-by-Jarman-Zaeh-1ea20e1f1a10',
-                                    title: 'Nameless/Monke by Jarman Zaeh',
-                                    createdAt: '2024-07-20 12:40:12.421638+00'
-                                },
-                                {
-                                    'public.profiles.id': '8f70e969-09a7-4f46-9c0e-62fee657cb75',
-                                    name: 'Adam Fittler',
-                                    handle: 'adamfittler',
-                                    'public.post.id': null,
-                                    title: null,
-                                    createdAt: null
-                                }
-                            ]
-                        */
-
-                        const primaryKeyValues: { primaryKey: string, ids: string[] }[] = [];
+                        const primaryKeyValues: PrimaryKeyEntities[] = [];
                         for (const row of result as unknown as Record<string, any>[])
                         {
-                            // const primaryKeyValues = primaryKey.map(pk => row[pk]);
-                            // console.log('Primary Key Values:', primaryKeyValues);
-
-                            // it needs to be formatted as a type: { primaryKey: string, ids: string[] }[]
-                            // const primaryKeyValuesIndex = primaryKeyValues.findIndex(pk => pk.primaryKey === primaryKey[0]);
-                            // if (primaryKeyValuesIndex === -1)
-                            // {
-                            //     primaryKeyValues.push({
-                            //         primaryKey: primaryKey[0],
-                            //         ids: [row[primaryKey[0]]]
-                            //     });
-                            // }
-                            // else
-                            // {
-                            //     primaryKeyValues[primaryKeyValuesIndex].ids.push(row[primaryKey[0]]);
-                            // }
-
                             for (const pk of primaryKey)
                             {
                                 const primaryKeyValuesIndex = primaryKeyValues.findIndex(pkv => pkv.primaryKey === pk);
                                 if (primaryKeyValuesIndex === -1)
                                 {
-                                    // console.log('Primary Key:', pk);
-                                    // console.log('Primary Key Value:', row[pk]);
-                                    // console.log('Row:', row);
                                     primaryKeyValues.push({
                                         primaryKey: pk,
                                         ids: [row[pk]]
@@ -342,6 +287,10 @@ export async function POST(request: NextRequest)
                         }
 
                         console.log('Primary Key Values:', primaryKeyValues);
+                        controller.enqueue(`\n=====START_PRIMARY_KEYS=====${JSON.stringify(primaryKeyValues)}=====END_PRIMARY_KEYS=====\n`);
+                        // This allows the controller to send the whole chunk as one and not include the table in the chunk
+                        // that's sent to the client.
+                        await new Promise(resolve => setTimeout(resolve, 75));
                     
                         if (Array.isArray(result) && result.length > 0) 
                         {

@@ -60,3 +60,6 @@ export type DatabaseSchemaStructure = {
         index_definition: string;
     }>;
 };
+
+
+export type PrimaryKeyEntities = { primaryKey: string, ids: string[] };
