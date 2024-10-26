@@ -1,10 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { PrimaryKeyEntities } from '@/lib/global.types';
 import { Alert, Button, Loader } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { Search } from 'lucide-react';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import Graph from './visualiser/Graph';
@@ -39,11 +40,46 @@ export default function Visualiser({ project }: { project: { id: string, databas
 
     const [gData, setGData] = useState<{
         links: { source: string, target: string }[],
-        nodes: { id: string }[],
+        nodes: { primaryKey: string, id: string, dbRelationship: string }[],
     }>({
         links: [],
         nodes: [],
     });
+
+    const [isDragging, setIsDragging] = useState(false);
+    const [splitPosition, setSplitPosition] = useState(60); // Initial split at 60%
+
+    const handleMouseDown = useCallback((e: { preventDefault: () => void; }) => 
+    {
+        e.preventDefault();
+        setIsDragging(true);
+    }, []);
+
+    const handleMouseMove = useCallback((e: any) => 
+    {
+        if (!isDragging) return;
+        
+        const container = e.currentTarget;
+        const containerRect = container.getBoundingClientRect();
+        const splitPercentage = ((e.clientX - containerRect.left) / containerRect.width) * 100;
+        
+        // Limit the split position between 20% and 80%
+        const limitedSplit = Math.min(Math.max(splitPercentage, 20), 80);
+        setSplitPosition(limitedSplit);
+
+        // update the width of the visualiser-container
+        const visualiserContainer = document.getElementById('visualiser-container');
+        if (visualiserContainer)
+        {
+            visualiserContainer.style.width = `${limitedSplit}%`;
+            setWidth(visualiserContainer.clientWidth);
+        }
+    }, [isDragging]);
+
+    const handleMouseUp = useCallback(() => 
+    {
+        setIsDragging(false);
+    }, []);
 
     async function searchDatabase() 
     {
@@ -107,7 +143,7 @@ export default function Visualiser({ project }: { project: { id: string, databas
                                 .then(response => response.json())
                                 .then((data: {
                                     links: { source: string, target: string }[],
-                                    nodes: { id: string }[],
+                                    nodes: { id: string, primaryKey: string, dbRelationship: string }[],
                                 }) => 
                                 {
                                     // we only want to set nodes and links we don't have already.
@@ -155,7 +191,7 @@ export default function Visualiser({ project }: { project: { id: string, databas
                                 .then(response => response.json())
                                 .then((data: {
                                     links: { source: string, target: string }[],
-                                    nodes: { id: string }[],
+                                    nodes: { primaryKey: string, id: string, dbRelationship: string }[],
                                 }) => 
                                 {
                                     // we only want to set nodes and links we don't have already.
@@ -284,77 +320,84 @@ export default function Visualiser({ project }: { project: { id: string, databas
                 transition: 'opacity 500ms ease-in',
                 display: showResults ? 'flex' : 'none'
             }}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
         >
-            <div id='visualiser-container' className='relative flex flex-col w-3/5 max-h-[calc(100%-110px)] border-r-[1px] border-y-[1px] border-neutral-700'>
-                {
-                    isGeneratingGraph &&
-                    // fill the whole container up and put a loader in the centre
+            <div 
+                id='visualiser-container'
+                className='relative flex flex-col border-r-[1px] border-y-[1px] border-neutral-700 max-h-[calc(100%-110px)]'
+                style={{ width: `${splitPosition}%` }}
+            >
+                {isGeneratingGraph && (
                     <div className='absolute inset-0 flex flex-col gap-1 items-center justify-center z-50 bg-black bg-opacity-50'>
-                        <Loader size={48} color='white' type='bars' />
+                        <Loader size={48} color='white' />
                         <h4 className='animate-pulse'>
-                            Generating Graph...
+                        Generating Graph...
                         </h4>
                     </div>
-                }
+                )}
                 <Graph gData={gData} width={width} height={height} />
             </div>
-            <div className='relative bg-black w-2/5 flex flex-col gap-3 p-4 max-h-[calc(100%-110px)] overflow-y-auto border-l-[1px] border-y-[1px] border-neutral-700'>
+
+            {/* Resizer handle */}
+            <div
+                className='w-1 cursor-col-resize bg-neutral-700 hover:bg-blue-500 active:bg-blue-600 transition-colors max-h-[calc(100%-110px)] z-50'
+                onMouseDown={handleMouseDown}
+            />
+
+            <div 
+                className='relative bg-black flex flex-col gap-3 p-4 max-h-[calc(100%-110px)] overflow-y-auto border-l-[1px] border-y-[1px] border-neutral-700 text-sm'
+                style={{ width: `${100 - splitPosition}%` }}
+            >
                 <h2 className='sticky'> 
                     SQL Query Window
                 </h2>
                 {searchResults.map((result, index) => 
-                {
-                    if (result.type === 'user') 
-                    {
-                        return (
-                            <div 
-                                key={index} 
-                                className='w-full p-4 px-8 bg-white text-black rounded-lg shadow-lg whitespace-pre-line'
+                    result.type === 'user' ? (
+                        <div 
+                            key={index} 
+                            className='w-full p-4 px-8 bg-white text-black rounded-lg shadow-lg whitespace-pre-line'
+                        >
+                            <b>You Wrote:</b>
+                            <br />
+                            {result.content}
+                        </div>
+                    ) : (
+                        <div key={index} className="w-full max-w-full">
+                            <Markdown
+                                remarkPlugins={[remarkGfm]}
+                                className='markdown prose prose-sm max-w-none'
+                                components={{
+                                    code({ className, children, ...props }) 
+                                    {
+                                        return (
+                                            <code
+                                                className={`${className} whitespace-pre-wrap break-words`}
+                                                {...props}
+                                            >
+                                                {children}
+                                            </code>
+                                        );
+                                    },
+                                    pre({ children, ...props }) 
+                                    {
+                                        return (
+                                            <pre
+                                                className="overflow-x-auto whitespace-pre-wrap break-words rounded-lg p-4"
+                                                {...props}
+                                            >
+                                                {children}
+                                            </pre>
+                                        );
+                                    }
+                                }}
                             >
-                                <b>You Wrote:</b>
-                                <br />
                                 {result.content}
-                            </div>
-                        );
-                    }
-                    else 
-                    {
-                        return (
-                            <div key={index} className="w-full max-w-full">
-                                <Markdown
-                                    remarkPlugins={[remarkGfm]}
-                                    className='markdown prose prose-sm max-w-none'
-                                    components={{
-                                        code({ className, children, ...props }) 
-                                        {
-                                            return (
-                                                <code
-                                                    className={`${className} whitespace-pre-wrap break-words`}
-                                                    {...props}
-                                                >
-                                                    {children}
-                                                </code>
-                                            );
-                                        },
-                                        pre({ children, ...props }) 
-                                        {
-                                            return (
-                                                <pre
-                                                    className="overflow-x-auto whitespace-pre-wrap break-words rounded-lg p-4"
-                                                    {...props}
-                                                >
-                                                    {children}
-                                                </pre>
-                                            );
-                                        }
-                                    }}
-                                >
-                                    {result.content}
-                                </Markdown>
-                            </div>
-                        );
-                    }
-                })}
+                            </Markdown>
+                        </div>
+                    )
+                )}
             </div>
         </div>
         <div
@@ -378,7 +421,7 @@ export default function Visualiser({ project }: { project: { id: string, databas
                         projectDetails &&
                         <input
                             id='search-database-input'
-                            className='focus:outline-none bg-transparent w-full py-2.5 px-8 font-semibold text-lg drop-shadow-lg'
+                            className='text-sm focus:outline-none bg-transparent w-full py-2.5 px-2 font-semibold drop-shadow-lg'
                             type='search'
                             placeholder={`Search ${projectDetails.databaseName}...`}
                             value={search}

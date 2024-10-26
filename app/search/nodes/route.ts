@@ -25,7 +25,7 @@ export async function POST(request: NextRequest)
 
     const gData: {
         links: { source: string, target: string }[],
-        nodes: { id: string }[],
+        nodes: { primaryKey: string, id: string, dbRelationship: string }[],
     } = {
         links: [],
         nodes: [],
@@ -87,12 +87,7 @@ export async function POST(request: NextRequest)
 
     // now we recursive go down the path of computing the links
     for (const node of allNodes)
-        await recursiveDFSNodeSearch(
-            supabase,
-            gData,
-            node,
-            1   
-        );
+        await recursiveDFSNodeSearch(supabase, gData, node, 1);
 
     // now we want to make sure that every single link has 2 nodes, otherwise remove it.
     console.log('gData', gData);

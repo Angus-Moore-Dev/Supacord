@@ -1,12 +1,12 @@
 import { Database } from '@/lib/database.types';
-import { ProjectNode } from '@/lib/global.types';
+import { EntityData, ProjectNode } from '@/lib/global.types';
 import { SupabaseClient } from '@supabase/supabase-js';
 
 export default async function recursiveDFSNodeSearch(
     supabase: SupabaseClient<Database>,
     gData: {
         links: { source: string; target: string; }[];
-        nodes: { id: string; }[];
+        nodes: { primaryKey: string, id: string; dbRelationship: string }[];
     },
     currentNode: ProjectNode,
     degreesOfSeparation: number,
@@ -23,7 +23,11 @@ export default async function recursiveDFSNodeSearch(
         if (!visitedNodes.has(currentNode.id)) 
         {
             visitedNodes.add(currentNode.id);
-            gData.nodes.push({ id: currentNode.id });  // Only store the ID
+            gData.nodes.push({ 
+                id: currentNode.id,
+                primaryKey: (currentNode.entityData as EntityData[]).find(ed => ed.isPrimaryKey)?.columnValue ?? '',
+                dbRelationship: currentNode.dbRelationship
+            });  // Only store the ID
         }
 
         const { data: edges, error } = await supabase
@@ -72,7 +76,11 @@ export default async function recursiveDFSNodeSearch(
             if (!visitedNodes.has(node.id)) 
             {
                 visitedNodes.add(node.id);
-                gData.nodes.push({ id: node.id });
+                gData.nodes.push({ 
+                    id: node.id, 
+                    primaryKey: (node.entityData as EntityData[]).find(ed => ed.isPrimaryKey)?.columnValue ?? '',
+                    dbRelationship: node.dbRelationship
+                });
             }
         }
 
@@ -84,7 +92,11 @@ export default async function recursiveDFSNodeSearch(
     if (!visitedNodes.has(currentNode.id)) 
     {
         visitedNodes.add(currentNode.id);
-        gData.nodes.push({ id: currentNode.id });  // Only store the ID
+        gData.nodes.push({ 
+            id: currentNode.id,
+            primaryKey: (currentNode.entityData as EntityData[]).find(ed => ed.isPrimaryKey)?.columnValue ?? '',
+            dbRelationship: currentNode.dbRelationship
+        });  // Only store the ID
     }
 
     // Fetch all edges connected to the current node

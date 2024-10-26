@@ -7,7 +7,7 @@ interface GraphProps
 {
     gData: {
         links: { source: string, target: string }[],
-        nodes: { id: string }[],
+        nodes: { primaryKey: string, id: string, dbRelationship: string }[],
     }
     width: number;
     height: number;
@@ -19,14 +19,16 @@ export default function Graph({ gData, width, height }: GraphProps)
 
     return <ForceGraph3D
         graphData={cachedGraphData}
-        nodeColor={() => 'white'}
+        // nodeColor={() => 'white'}
         warmupTicks={100}
         cooldownTicks={100}
-        linkColor={() => 'green'}
+        linkColor={() => 'grey'}
         linkWidth={2}
         backgroundColor='black'
         width={width}
         height={height}
         showNavInfo={false}
+        nodeAutoColorBy={node => node.dbRelationship}
+        nodeLabel={node => node.dbRelationship}
     />;
 }
