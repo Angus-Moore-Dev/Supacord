@@ -3,8 +3,7 @@
 # Supacord - Supabase Database Visualiser & Investigator
 Supacord is a data visualiser platform designed to allow for massive datasets to be computed and visualised for your investigatory purposes, queryable through natural language.
 
-We are aiming to massively simplify the process of investigating data, table relationships, using sophisticated search algorithms to identify relationships that may be contained
-in non-foreign key columns, JSON data and more.
+We are aiming to massively simplify the process of investigating data, table relationships, using sophisticated search algorithms to identify relationships that may be contained in non-foreign key columns, JSON data and more. The purpose is for when errors, clients, customers or undefined behaviour occurs that mandates going deep into the Supabase SQL editor, but with some more visual components to better understand things such as abnormalities, spikes, weird relationships (maybe user abuse or spam) and more.
 
 Working at [Jensen Labs](https://www.jensenlabs.dev/), I found there have been many times where clients have asked for records to be updated, or data to be investigated because they're niche enough to not warrant a feature, but still crop up from time to time (like when the last MFA session was handled by a specific user, or the references made to a particular entity across multiple tables within unstructured JSON data). This becomes increasingly difficult when you're trying to output code, talk to clients and grow your company.
 
@@ -20,7 +19,7 @@ So I founded this tool as an easy way to do data investigations, making it quick
 
 
 ## Experimental
-We are currently building Supacord, so nothing is really "demo-able" just yet, but we're super excited to be building this awesome tool.
+We are currently building Supacord, so nothing is really "demo-able" just yet, but we're super excited to be building this awesome tool. Eventually the app will be a BYOK (Bring Your Own Key) scenario, so that you can control your ownership of OpenAI use. I'm also planning on supporting Claude 3.5 Sonnet also.
 
 # Supabase
 At [Jensen Labs](https://www.jensenlabs.dev/), we only use Supabase for our database hosting. It's magnificent and we have no intention of leaving ever. Even if the company were to implode (or explode?), we'd still self-host the latest version and maintain it ourselves from there. Supacord is designed to interact natively with Supabase projects, allowing Supabase developers to interface with their project's data quickly, intuitively and with a really space-age user interface & experience.
