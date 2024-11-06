@@ -9,6 +9,8 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import Graph from './visualiser/Graph';
+import Logo from '@/public/supacord_logo_transparent.png';
+import Image from 'next/image';
 
 
 export default function Visualiser({ project }: { project: { id: string, databaseName: string } }) 
@@ -31,12 +33,7 @@ export default function Visualiser({ project }: { project: { id: string, databas
 
     const [isGeneratingGraph, setIsGeneratingGraph] = useState(false);
 
-    const [searchResults, setSearchResults] = useState<{ type: 'user' | 'ai', content: string }[]>([
-        {
-            type: 'ai',
-            content: 'Start writing a query to search the database...',
-        }
-    ]);
+    const [searchResults, setSearchResults] = useState<{ type: 'user' | 'ai', content: string }[]>([]);
 
     const [gData, setGData] = useState<{
         links: { source: string, target: string }[],
@@ -54,19 +51,21 @@ export default function Visualiser({ project }: { project: { id: string, databas
         e.preventDefault();
         setIsDragging(true);
     }, []);
-
+        
     const handleMouseMove = useCallback((e: any) => 
     {
         if (!isDragging) return;
-        
+            
         const container = e.currentTarget;
         const containerRect = container.getBoundingClientRect();
-        const splitPercentage = ((e.clientX - containerRect.left) / containerRect.width) * 100;
-        
+            
+        // Calculate from right edge instead of left
+        const splitPercentage = (1 - ((e.clientX - containerRect.left) / containerRect.width)) * 100;
+            
         // Limit the split position between 20% and 80%
         const limitedSplit = Math.min(Math.max(splitPercentage, 20), 80);
         setSplitPosition(limitedSplit);
-
+        
         // update the width of the visualiser-container
         const visualiserContainer = document.getElementById('visualiser-container');
         if (visualiserContainer)
@@ -312,9 +311,9 @@ export default function Visualiser({ project }: { project: { id: string, databas
     }, []);
 
 
-    return <div className='flex-grow flex flex-col items-center justify-center min-h-[calc(100vh-100px)] relative overflow-hidden'>
+    return <div className='flex-grow bg-black flex flex-col items-center justify-center min-h-[calc(100vh-100px)] relative overflow-hidden'>
         <div 
-            className='w-full h-[calc(100vh-80px)] flex absolute top-0 left-0'
+            className='w-full flex-grow h-full flex absolute top-0 left-0'
             style={{ 
                 opacity: resultsOpacity,
                 transition: 'opacity 500ms ease-in',
@@ -325,8 +324,106 @@ export default function Visualiser({ project }: { project: { id: string, databas
             onMouseLeave={handleMouseUp}
         >
             <div 
+                className='relative bg-black flex flex-col gap-3 p-4 flex-grow max-h-[calc(100%)] overflow-y-auto border-l-[1px] border-y-[1px] border-neutral-700 text-sm'
+                style={{ width: `${100 - splitPosition}%` }}
+            >
+                <div className='flex-grow flex flex-col gap-3'>
+                    {
+                        searchResults.length === 0 &&
+                        <div className='flex-grow flex flex-col gap-3 items-center justify-center'>
+                            <Image src={Logo} alt='Supacord Logo' width={50} height={50} />
+                            <h4 className='text-center'>Investigate Your Data</h4>
+                        </div>
+                    }
+                    {searchResults.map((result, index) => 
+                        result.type === 'user' ? (
+                            <div 
+                                key={index} 
+                                className='w-full p-4 px-8 bg-white text-black rounded-lg shadow-lg whitespace-pre-line'
+                            >
+                                <b>You Wrote:</b>
+                                <br />
+                                {result.content}
+                            </div>
+                        ) : (
+                            <div key={index} className="w-full max-w-full">
+                                <Markdown
+                                    remarkPlugins={[remarkGfm]}
+                                    className='markdown prose prose-sm max-w-none'
+                                    components={{
+                                        code({ className, children, ...props }) 
+                                        {
+                                            return (
+                                                <code
+                                                    className={`${className} whitespace-pre-wrap break-words`}
+                                                    {...props}
+                                                >
+                                                    {children}
+                                                </code>
+                                            );
+                                        },
+                                        pre({ children, ...props }) 
+                                        {
+                                            return (
+                                                <pre
+                                                    className="overflow-x-auto whitespace-pre-wrap break-words rounded-lg p-4"
+                                                    {...props}
+                                                >
+                                                    {children}
+                                                </pre>
+                                            );
+                                        }
+                                    }}
+                                >
+                                    {result.content}
+                                </Markdown>
+                            </div>
+                        )
+                    )}
+                </div>
+                <div
+                    ref={searchBarRef}
+                    className='w-full flex items-center justify-center sticky bottom-0'
+                >
+                    <form onSubmit={handleSearch} className='w-full flex flex-col gap-5'>
+                        <div className='flex items-start gap-5 bg-primary p-2 rounded-lg'>
+                            {
+                                !projectDetails &&
+                                <Loader size={24} color='white' className='my-3 mr-auto ml-8' />
+                            }
+                            {
+                                projectDetails &&
+                            <textarea
+                                id='search-database-input'
+                                className='text-sm focus:outline-none bg-transparent min-h-[30px] w-full py-2.5 px-2 font-semibold drop-shadow-lg'
+                                placeholder={`Search ${projectDetails.databaseName}...`}
+                                value={search}
+                                disabled={isSearching}
+                                onChange={(e) => setSearch(e.target.value)}
+                            />
+                            }
+                            <Button disabled={!projectDetails} variant='white' className='min-w-fit' loading={isSearching}
+                                onClick={() => search && searchDatabase()}>
+                                <Search size={20} />
+                            </Button>
+                        </div>
+                        {
+                            errorText &&
+                        <Alert variant='filled' color='red'>
+                            {errorText}
+                        </Alert>
+                        }
+                    </form>
+                </div>
+            </div>
+            {/* Resizer handle */}
+            <div
+                className='w-1 cursor-col-resize bg-neutral-700 hover:bg-blue-500 active:bg-blue-600 transition-colors max-h-[calc(100%)] z-50'
+                onMouseDown={handleMouseDown}
+            />
+            <div 
                 id='visualiser-container'
-                className='relative flex flex-col border-r-[1px] border-y-[1px] border-neutral-700 max-h-[calc(100%-110px)]'
+                className='relative flex flex-col border-r-[1px] border-y-[1px] border-neutral-700 max-h-[calc(100%)]'
                 style={{ width: `${splitPosition}%` }}
             >
                 {isGeneratingGraph && (
@@ -339,120 +436,6 @@ export default function Visualiser({ project }: { project: { id: string, databas
                 )}
                 <Graph gData={gData} width={width} height={height} />
             </div>
-
-            {/* Resizer handle */}
-            <div
-                className='w-1 cursor-col-resize bg-neutral-700 hover:bg-blue-500 active:bg-blue-600 transition-colors max-h-[calc(100%-110px)] z-50'
-                onMouseDown={handleMouseDown}
-            />
-
-            <div 
-                className='relative bg-black flex flex-col gap-3 p-4 max-h-[calc(100%-110px)] overflow-y-auto border-l-[1px] border-y-[1px] border-neutral-700 text-sm'
-                style={{ width: `${100 - splitPosition}%` }}
-            >
-                <h2 className='sticky'> 
-                    SQL Query Window
-                </h2>
-                {searchResults.map((result, index) => 
-                    result.type === 'user' ? (
-                        <div 
-                            key={index} 
-                            className='w-full p-4 px-8 bg-white text-black rounded-lg shadow-lg whitespace-pre-line'
-                        >
-                            <b>You Wrote:</b>
-                            <br />
-                            {result.content}
-                        </div>
-                    ) : (
-                        <div key={index} className="w-full max-w-full">
-                            <Markdown
-                                remarkPlugins={[remarkGfm]}
-                                className='markdown prose prose-sm max-w-none'
-                                components={{
-                                    code({ className, children, ...props }) 
-                                    {
-                                        return (
-                                            <code
-                                                className={`${className} whitespace-pre-wrap break-words`}
-                                                {...props}
-                                            >
-                                                {children}
-                                            </code>
-                                        );
-                                    },
-                                    pre({ children, ...props }) 
-                                    {
-                                        return (
-                                            <pre
-                                                className="overflow-x-auto whitespace-pre-wrap break-words rounded-lg p-4"
-                                                {...props}
-                                            >
-                                                {children}
-                                            </pre>
-                                        );
-                                    }
-                                }}
-                            >
-                                {result.content}
-                            </Markdown>
-                        </div>
-                    )
-                )}
-            </div>
-        </div>
-        <div
-            ref={searchBarRef}
-            className='w-full flex items-center justify-center z-50 absolute left-0 right-0'
-            style={{ 
-                bottom: '50vh',
-                transform: showResults ? 'translateY(calc(50vh))' : 'translateY(0)',
-                paddingBottom: '20px',
-                paddingTop: '10px',
-                transition: 'transform 500ms ease-out',
-            }}
-        >
-            <form onSubmit={handleSearch} className='w-[60vw] flex flex-col gap-5'>
-                <div className='flex gap-5 bg-black p-2 rounded-full border-[1px] border-neutral-700 items-center px-8 py-4'>
-                    {
-                        !projectDetails &&
-                        <Loader size={24} color='white' className='my-3 mr-auto ml-8' />
-                    }
-                    {
-                        projectDetails &&
-                        <input
-                            id='search-database-input'
-                            className='text-sm focus:outline-none bg-transparent w-full py-2.5 px-2 font-semibold drop-shadow-lg'
-                            type='search'
-                            placeholder={`Search ${projectDetails.databaseName}...`}
-                            value={search}
-                            disabled={isSearching}
-                            onChange={(e) => setSearch(e.target.value)}
-                        />
-                    }
-                    <Button disabled={!projectDetails} variant='white' leftSection={<Search size={20} />} className='min-w-fit' loading={isSearching}
-                        onClick={() => 
-                        {
-                            searchDatabase();
-                            if (!isAnimating) 
-                            {
-                                setIsAnimating(true);
-                                if (searchBarRef.current) 
-                                {
-                                    searchBarRef.current.style.transition = 'all 500ms ease-out';
-                                    searchBarRef.current.style.transform = 'translateY(calc(50vh - 10px))';
-                                }
-                            }
-                        }}>
-                        Search DB
-                    </Button>
-                </div>
-                {
-                    errorText &&
-                    <Alert variant='filled' color='red'>
-                        {errorText}
-                    </Alert>
-                }
-            </form>
         </div>
     </div>;
 }
