@@ -21,11 +21,6 @@ export default async function AppLayout({ children }: Readonly<{ children: React
                     Projects
                 </Button>
             </Link>
-            <Link href='/app/data'>
-                <Button>
-                    Data
-                </Button>
-            </Link>
             <Link href='/app/account' className='ml-auto'>
                 <Button leftSection={<User size={20} />} variant='white'>
                     My Account
