@@ -418,19 +418,28 @@ export default function Visualiser({ project }: { project: { id: string, databas
             </div>
             {/* Resizer handle */}
             <div
-                className='w-1 cursor-col-resize bg-neutral-700 hover:bg-blue-500 active:bg-blue-600 transition-colors max-h-[calc(100%)] z-50'
+                className='flex-grow flex flex-col w-1 cursor-col-resize bg-neutral-700 hover:bg-blue-500 active:bg-blue-600 transition-colors max-h-[calc(100%)] z-50'
                 onMouseDown={handleMouseDown}
             />
             <div 
                 id='visualiser-container'
-                className='relative flex flex-col border-r-[1px] border-y-[1px] border-neutral-700 max-h-[calc(100%)]'
+                className='relative flex flex-col border-r-[1px] border-y-[1px] border-neutral-700 max-h-full'
                 style={{ width: `${splitPosition}%` }}
             >
+                {
+                    searchResults.length === 0 &&
+                    <div className='absolute inset-0 flex flex-col items-center justify-center gap-3 z-50'>
+                        <Image src={Logo} alt='Supacord Logo' width={50} height={50} />
+                        <h4 className='text-center'>
+                            Graph will appear when data starts flowing
+                        </h4>
+                    </div>
+                }
                 {isGeneratingGraph && (
                     <div className='absolute inset-0 flex flex-col gap-1 items-center justify-center z-50 bg-black bg-opacity-50'>
                         <Loader size={48} color='white' />
                         <h4 className='animate-pulse'>
-                        Generating Graph...
+                            Generating Graph...
                         </h4>
                     </div>
                 )}
