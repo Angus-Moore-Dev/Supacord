@@ -44,7 +44,7 @@ export default function Visualiser({ project }: { project: { id: string, databas
     });
 
     const [isDragging, setIsDragging] = useState(false);
-    const [splitPosition, setSplitPosition] = useState(60); // Initial split at 60%
+    const [splitPosition, setSplitPosition] = useState(50); // Initial split at 60%
 
     const handleMouseDown = useCallback((e: { preventDefault: () => void; }) => 
     {

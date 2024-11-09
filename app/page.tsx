@@ -28,11 +28,6 @@ export default async function HomePage()
                 <h3 className='max-w-2xl'>
                     Stop wasting time staring at UUIDs, writing massive SQL macros and being a monkey staring at a monolith. Embrace science-fiction technology.
                 </h3>
-                <p>
-                    Supacord is an open-source platform, please checkout out <Link href='https://github.com/Angus-Moore-Dev/Supacord/' target='_blank' className='text-blue-500 hover:text-blue-400 underline'>
-                    our GitHub.
-                    </Link>
-                </p>
                 {
                     !user &&
                     <Link href='/auth'>

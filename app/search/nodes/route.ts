@@ -99,6 +99,8 @@ export async function POST(request: NextRequest)
         }
     }
 
+    console.log(`Found ${gData.nodes.length} nodes for primary keys`);
+
     const promiseChain: Promise<ProjectLink[]>[] = [];
     for (const node of gData.nodes)
     {
@@ -123,6 +125,7 @@ export async function POST(request: NextRequest)
     // now we get the nodes on the other side of the link
     const links = await Promise.all(promiseChain);
     gData.links = links.flat().map(link => ({ source: link.startingNodeId, target: link.endingNodeId }));
+    console.log(`Added ${gData.links.length} links`);
 
     // sometimes the links have the target and source mixed up,
     // so we need to fetch the IDs of the links to get the nodes on the other side of the link
@@ -144,6 +147,7 @@ export async function POST(request: NextRequest)
         id: node.id, 
         dbRelationship: node.dbRelationship
     })));
+    console.log(`Added ${oneDegreeSeparationNodes.length} one degree separation nodes`);
 
     // now we repeat this process for the one degree separated nodes to get the 2nd degree separated nodes
 
@@ -170,6 +174,7 @@ export async function POST(request: NextRequest)
 
     const secondDegreeLinks = await Promise.all(secondDegreeChain);
     gData.links.push(...secondDegreeLinks.flat().map(link => ({ source: link.startingNodeId, target: link.endingNodeId })));
+    console.log(`Added ${secondDegreeLinks.flat().length} second degree links`);
 
     // now we get the nodes on the other side of the link
     const secondDegreeOtherSideNodeIds = secondDegreeLinks.flat().map(link => oneDegreeSeparationNodes.find(node => node.id === link.startingNodeId) ? link.endingNodeId : link.startingNodeId);
@@ -189,6 +194,7 @@ export async function POST(request: NextRequest)
         id: node.id, 
         dbRelationship: node.dbRelationship
     })));
+    console.log(`Added ${secondDegreeNodes.length} second degree nodes`);
 
 
     return NextResponse.json(gData);
