@@ -393,14 +393,15 @@ export default function Visualiser({ project }: { project: { id: string, databas
                             }
                             {
                                 projectDetails &&
-                            <textarea
-                                id='search-database-input'
-                                className='text-sm focus:outline-none bg-transparent min-h-[30px] w-full py-2.5 px-2 font-semibold drop-shadow-lg'
-                                placeholder={`Search ${projectDetails.databaseName}...`}
-                                value={search}
-                                disabled={isSearching}
-                                onChange={(e) => setSearch(e.target.value)}
-                            />
+                                <textarea
+                                    id='search-database-input'
+                                    className='text-sm focus:outline-none bg-transparent min-h-[30px] w-full py-2.5 px-2 font-semibold drop-shadow-lg'
+                                    placeholder={`Search ${projectDetails.databaseName}...`}
+                                    value={search}
+                                    disabled={isSearching}
+                                    onChange={(e) => setSearch(e.target.value)}
+                                    onKeyDown={e => e.key === 'Enter' && searchDatabase()}
+                                />
                             }
                             <Button disabled={!projectDetails} variant='white' className='min-w-fit' loading={isSearching}
                                 onClick={() => search && searchDatabase()}>
@@ -409,9 +410,9 @@ export default function Visualiser({ project }: { project: { id: string, databas
                         </div>
                         {
                             errorText &&
-                        <Alert variant='filled' color='red'>
-                            {errorText}
-                        </Alert>
+                            <Alert variant='filled' color='red'>
+                                {errorText}
+                            </Alert>
                         }
                     </form>
                 </div>

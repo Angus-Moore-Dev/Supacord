@@ -63,3 +63,22 @@ export type DatabaseSchemaStructure = {
 
 
 export type PrimaryKeyEntities = { primaryKey: string, ids: string[] };
+
+export enum OutputType
+{
+    Text = 'text',
+    SQL = 'sql',
+    Code = 'code',
+    Table = 'table',
+    BarChart = 'bar-chart',
+    LineChart = 'line-chart',
+    PieChart = 'pie-chart',
+    ScatterChart = 'scatter-chart',
+    AreaChart = 'area-chart',
+    Heatmap = 'heatmap',
+
+}
+export type SearchStreamOutput = {
+    content: string; // unformatted content
+    type: OutputType;
+}

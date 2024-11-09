@@ -1,6 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
-import { useMemo } from 'react';
-import ForceGraph3D from 'react-force-graph-3d';
+import { useMemo, useRef } from 'react';
+import dynamic from 'next/dynamic';
+const ForceGraph3D = dynamic(() => import('react-force-graph-3d'), { ssr: false });
 
 
 interface GraphProps
@@ -15,7 +17,13 @@ interface GraphProps
 
 export default function Graph({ gData, width, height }: GraphProps)
 {
-    const cachedGraphData = useMemo(() => gData, [gData]);
+    const graphRef = useRef<any>();
+    const cachedGraphData = useMemo(() => 
+    {
+        if (graphRef.current)
+            graphRef.current.refresh();
+        return gData;
+    }, [gData]);
 
     return <ForceGraph3D
         graphData={cachedGraphData}
@@ -30,5 +38,6 @@ export default function Graph({ gData, width, height }: GraphProps)
         showNavInfo={false}
         nodeAutoColorBy={node => node.dbRelationship}
         nodeLabel={node => node.dbRelationship}
+        ref={graphRef}
     />;
 }
