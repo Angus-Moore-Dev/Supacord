@@ -15,7 +15,7 @@ export default async function HomePage()
         <section className='flex flex-col w-full max-w-7xl gap-10 px-16 mt-[100px] mb-24'>
             <div className='flex flex-col gap-10 items-start mt-24'>
                 <h1 className='font-extrabold text-5xl max-w-4xl text-center lg:text-left'>
-                    Visualise Your <span className='underline text-supabase-green'><Link href='https://www.supabase.com' target='_blank'>Supabase</Link></span> Project in a &quot;Just-in-time Visualiser&quot;.<small className='text-base text-neutral-400 font-normal'>&nbsp;&nbsp;&nbsp;Queryable With <b>SpaceQL!</b></small>
+                    Visualise Your <span className='underline text-supabase-green'><Link href='https://www.supabase.com' target='_blank'>Supabase</Link></span> Project in a Generative UI.<small className='text-base text-neutral-400 font-normal'>&nbsp;&nbsp;&nbsp;Queryable With <b>SpaceQL!</b></small>
                 </h1>
                 <h3 className='max-w-2xl text-center lg:text-left'>
                     {/* Stop wasting time staring at UUIDs, writing massive SQL macros and being a monkey staring at a monolith. Embrace science-fiction technology. */}
