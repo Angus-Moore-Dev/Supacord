@@ -1,4 +1,4 @@
-import { createAdminApiClient, createServerClient } from '@/utils/supabaseServer';
+import { createAdminClient, createServerClient } from '@/utils/supabaseServer';
 import { NextRequest, NextResponse } from 'next/server';
 
 
@@ -16,7 +16,7 @@ export async function GET(request: NextRequest)
 
     console.log(redirectURI);
 
-    const adminSupabase = createAdminApiClient();
+    const adminSupabase = createAdminClient();
 
     const { data, error } = await adminSupabase
         .from('supabase_oauth_auth_flow')

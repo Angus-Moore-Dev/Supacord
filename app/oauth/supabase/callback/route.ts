@@ -1,4 +1,4 @@
-import { createAdminApiClient } from '@/utils/supabaseServer';
+import { createAdminClient } from '@/utils/supabaseServer';
 import { NextRequest, NextResponse } from 'next/server';
 import { isSupabaseError, SupabaseManagementAPI } from 'supabase-management-js';
 
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest)
         return new Response('Missing code', { status: 400 });
 
     // now we check if the state is valid.
-    const adminSupabase = createAdminApiClient();
+    const adminSupabase = createAdminClient();
     const { data, error } = await adminSupabase
         .from('supabase_oauth_auth_flow')
         .select('*')

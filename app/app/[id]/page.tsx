@@ -1,11 +1,11 @@
-import Visualiser from '@/components/Visualiser';
-import { createAdminApiClient, createServerClient } from '@/utils/supabaseServer';
+import VisualiserUI from '@/components/visualiser/VisualiserUI';
+import { createAdminClient, createServerClient } from '@/utils/supabaseServer';
 import { Metadata } from 'next';
 
 
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata>
 {
-    const supabase = createAdminApiClient();
+    const supabase = createAdminClient();
     const { data: project, error } = await supabase
         .from('projects')
         .select('databaseName')
@@ -26,10 +26,9 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
 }
 
 
-export default async function AppVisualisePage({ params }: { params: { id: string } })
+export default async function VisualiserPage({ params }: { params: { id: string } })
 {
     const supabase = createServerClient();
-
     const { data: project, error } = await supabase
         .from('projects')
         .select('*')
@@ -39,15 +38,11 @@ export default async function AppVisualisePage({ params }: { params: { id: strin
     if (error)
     {
         console.error(error);
-        return <div className="flex flex-col gap-5">
-            <h1>
-                {error.code} - {error.message}
-            </h1>
-            <p>
-                {error.details}
-            </p>
+        return <div>
+            <h1>Error</h1>
+            <p>Failed to load project</p>
         </div>;
     }
 
-    return <Visualiser project={project} />;
+    return <VisualiserUI project={project} />;
 }

@@ -27,9 +27,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             </head>
             <body className={`${inter.className} min-h-screen flex flex-col antialiased`}>
                 <MantineProvider defaultColorScheme="dark" theme={{
-                    primaryColor: 'dark',
+                    primaryColor: 'green',
                     fontSmoothing: true,
-                    defaultRadius: 'lg'
+                    defaultRadius: 'sm'
                 }}>
                     <Notifications position='bottom-right' />
                     {children}

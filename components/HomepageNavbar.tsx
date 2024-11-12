@@ -54,30 +54,7 @@ export default function HomepageNavbar({ user }: HomepageNavbarProps)
             <Image src={SupacordLogo} alt='Supacord' width={40} height={40} />
             <Image src={Supacord} alt='Supacord' width={150} height={40} />
             <section className='ml-16 flex gap-5 items-center'>
-                <Button onClick={() => 
-                {
-                    document.getElementById('homepage-features')?.scrollIntoView({ behavior: 'smooth' });
-                }}>
-                    Features
-                </Button>
-                <Button onClick={() => 
-                {
-                    document.getElementById('homepage-usecases')?.scrollIntoView({ behavior: 'smooth' });
-                }}>
-                    Use Cases
-                </Button>
-                <Button onClick={() => 
-                {
-                    document.getElementById('homepage-datasecurity')?.scrollIntoView({ behavior: 'smooth' });
-                }}>
-                    Data & Security
-                </Button>
-                <Button onClick={() => 
-                {
-                    document.getElementById('homepage-pricing')?.scrollIntoView({ behavior: 'smooth' });
-                }}>
-                    Pricing
-                </Button>
+                {/* Will have clickables down to the section that points to the CTAs */}
             </section>
             <section className='ml-auto flex gap-5 items-center'>
                 {
@@ -92,7 +69,7 @@ export default function HomepageNavbar({ user }: HomepageNavbarProps)
                     user &&
                     <>
                         <Link href='/app'>
-                            <Button variant='white'>
+                            <Button>
                                 Go To App &rarr;
                             </Button>
                         </Link>

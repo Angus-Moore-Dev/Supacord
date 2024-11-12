@@ -16,7 +16,7 @@ export type Database = {
           id: string
           isAI: boolean
           messageText: string
-          sqlQueries: string[]
+          tabId: string
         }
         Insert: {
           conversationId: string
@@ -24,7 +24,7 @@ export type Database = {
           id?: string
           isAI: boolean
           messageText: string
-          sqlQueries: string[]
+          tabId: string
         }
         Update: {
           conversationId?: string
@@ -32,11 +32,50 @@ export type Database = {
           id?: string
           isAI?: boolean
           messageText?: string
-          sqlQueries?: string[]
+          tabId?: string
         }
         Relationships: [
           {
             foreignKeyName: "conversation_messages_conversationId_fkey"
+            columns: ["conversationId"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversation_messages_tabId_fkey"
+            columns: ["tabId"]
+            isOneToOne: false
+            referencedRelation: "conversation_tabs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversation_tabs: {
+        Row: {
+          conversationId: string
+          createdAt: string
+          id: string
+          position: number
+          title: string
+        }
+        Insert: {
+          conversationId: string
+          createdAt?: string
+          id?: string
+          position: number
+          title?: string
+        }
+        Update: {
+          conversationId?: string
+          createdAt?: string
+          id?: string
+          position?: number
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_tabs_conversationId_fkey"
             columns: ["conversationId"]
             isOneToOne: false
             referencedRelation: "conversations"
@@ -109,84 +148,6 @@ export type Database = {
         }
         Relationships: []
       }
-      project_links: {
-        Row: {
-          createdAt: string
-          endingNodeId: string
-          id: string
-          projectId: string
-          startingNodeId: string
-        }
-        Insert: {
-          createdAt?: string
-          endingNodeId: string
-          id?: string
-          projectId: string
-          startingNodeId: string
-        }
-        Update: {
-          createdAt?: string
-          endingNodeId?: string
-          id?: string
-          projectId?: string
-          startingNodeId?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "project_links_endingNodeId_fkey"
-            columns: ["endingNodeId"]
-            isOneToOne: false
-            referencedRelation: "project_nodes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "project_links_projectId_fkey"
-            columns: ["projectId"]
-            isOneToOne: false
-            referencedRelation: "projects"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "project_links_startingNodeId_fkey"
-            columns: ["startingNodeId"]
-            isOneToOne: false
-            referencedRelation: "project_nodes"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      project_nodes: {
-        Row: {
-          createdAt: string
-          dbRelationship: string
-          entityData: Json
-          id: string
-          projectId: string
-        }
-        Insert: {
-          createdAt?: string
-          dbRelationship: string
-          entityData: Json
-          id?: string
-          projectId: string
-        }
-        Update: {
-          createdAt?: string
-          dbRelationship?: string
-          entityData?: Json
-          id?: string
-          projectId?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "project_nodes_projectId_fkey"
-            columns: ["projectId"]
-            isOneToOne: false
-            referencedRelation: "projects"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       projects: {
         Row: {
           createdAt: string
@@ -224,6 +185,48 @@ export type Database = {
             columns: ["profileId"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      saved_user_macros: {
+        Row: {
+          createdAt: string
+          id: string
+          macroTextPrompt: string
+          profileId: string
+          projectId: string
+          storedSQLQuery: string | null
+        }
+        Insert: {
+          createdAt?: string
+          id?: string
+          macroTextPrompt: string
+          profileId: string
+          projectId: string
+          storedSQLQuery?: string | null
+        }
+        Update: {
+          createdAt?: string
+          id?: string
+          macroTextPrompt?: string
+          profileId?: string
+          projectId?: string
+          storedSQLQuery?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_user_macros_profileId_fkey"
+            columns: ["profileId"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "saved_user_macros_projectId_fkey"
+            columns: ["projectId"]
+            isOneToOne: false
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]
@@ -297,6 +300,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      waitlist_emails: {
+        Row: {
+          createdAt: string
+          email: string
+          id: string
+          location: string
+        }
+        Insert: {
+          createdAt?: string
+          email: string
+          id?: string
+          location: string
+        }
+        Update: {
+          createdAt?: string
+          email?: string
+          id?: string
+          location?: string
+        }
+        Relationships: []
       }
     }
     Views: {
