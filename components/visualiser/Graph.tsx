@@ -2,7 +2,7 @@
 'use client';
 import { useMemo, useRef } from 'react';
 import dynamic from 'next/dynamic';
-const ForceGraph3D = dynamic(() => import('react-force-graph-3d'), { ssr: false });
+const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), { ssr: false });
 
 
 interface GraphProps
@@ -25,9 +25,8 @@ export default function Graph({ gData, width, height }: GraphProps)
         return gData;
     }, [gData]);
 
-    return <ForceGraph3D
+    return <ForceGraph2D
         graphData={cachedGraphData}
-        // nodeColor={() => 'white'}
         warmupTicks={100}
         cooldownTicks={100}
         linkColor={() => 'grey'}
@@ -35,7 +34,6 @@ export default function Graph({ gData, width, height }: GraphProps)
         backgroundColor='black'
         width={width}
         height={height}
-        showNavInfo={false}
         nodeAutoColorBy={node => node.dbRelationship}
         nodeLabel={node => node.dbRelationship}
         ref={graphRef}
