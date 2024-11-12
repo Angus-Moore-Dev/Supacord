@@ -57,14 +57,14 @@ export default function HomepageNavbar({ user }: HomepageNavbarProps)
                 {/* Will have clickables down to the section that points to the CTAs */}
             </section>
             <section className='ml-auto flex gap-5 items-center'>
-                {
+                {/* {
                     !user &&
                     <Link href='/auth' className='h-fit'>
                         <Button variant='white'>
                             Join The Alpha Now
                         </Button>
                     </Link>
-                }
+                } */}
                 {
                     user &&
                     <>
