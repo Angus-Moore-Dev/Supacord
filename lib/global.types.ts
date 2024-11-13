@@ -64,18 +64,23 @@ export type PrimaryKeyEntities = { primaryKey: string, ids: string[] };
 export enum OutputType
 {
     Text = 'text',
-    SQL = 'sql',
-    Code = 'code',
+    SQL = 'sql query',
     Table = 'table',
-    BarChart = 'bar-chart',
-    LineChart = 'line-chart',
-    PieChart = 'pie-chart',
-    ScatterChart = 'scatter-chart',
-    AreaChart = 'area-chart',
+    BarChart = 'bar chart',
+    LineChart = 'line chart',
+    PieChart = 'pie chart',
+    ScatterPlot = 'scatter plot',
+    TimeSeries = 'time series',
     Heatmap = 'heatmap',
+    Histogram = 'histogram',
 
 }
 export type SearchStreamOutput = {
     content: string; // unformatted content
     type: OutputType;
+    chartDetails: {
+        xLabel: string;
+        yLabel: string;
+        title: string;
+    } | undefined;
 }

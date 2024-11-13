@@ -6,6 +6,7 @@ import { ColorSchemeScript, MantineProvider } from '@mantine/core';
 import { Raleway } from 'next/font/google';
 import { Notifications } from '@mantine/notifications';
 import { Analytics } from '@vercel/analytics/react';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 
 const inter = Raleway({ subsets: ['latin'] });
 
@@ -35,6 +36,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                     {children}
                 </MantineProvider>
                 <Analytics />
+                <SpeedInsights />
             </body>
         </html>
     );

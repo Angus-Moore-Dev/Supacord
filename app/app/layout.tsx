@@ -14,7 +14,7 @@ export default async function AppLayout({ children }: Readonly<{ children: React
                 <Image src={SupacordLogo} alt='Supacord' width={150} height={60} />
             </Link>
             <Link href='/app/projects' className='ml-16'>
-                <Button>
+                <Button variant='subtle'>
                     Projects
                 </Button>
             </Link>

@@ -1,38 +1,32 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { createServerClient } from '@/utils/supabaseServer';
-import { NextRequest } from 'next/server';
-import OpenAI from 'openai';
-import { isSupabaseError, SupabaseManagementAPI } from 'supabase-management-js';
 import accessTokenRefresher from '@/utils/accessTokenRefresher';
-import { PrimaryKeyEntities } from '@/lib/global.types';
+import { createServerClient } from '@/utils/supabaseServer';
+import { NextRequest, NextResponse } from 'next/server';
+import { isSupabaseError, SupabaseManagementAPI } from 'supabase-management-js';
+import OpenAI from 'openai';
 
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
     organization: process.env.OPENAI_ORGANIZATION,
 });
 
-export async function POST(request: NextRequest) 
+
+export async function POST(request: NextRequest)
 {
     const supabase = createServerClient();
     const user = (await supabase.auth.getUser()).data.user;
+    if (!user)
+        return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
 
-    if (!user) 
-    {
-        return new Response(JSON.stringify({ error: 'User not authenticated' }), { status: 401 });
-    }
-
-    const { projectId, searchQuery, chatHistory } = await request.json() as {
+    const { 
+        projectId,
+        chatHistory
+    } = await request.json() as {
         projectId: string;
-        searchQuery: string;
         chatHistory: {
-            type: string;
+            type: 'ai' | 'user';
             content: string;
         }[];
     };
-    if (!projectId || !searchQuery || !chatHistory) 
-    {
-        return new Response(JSON.stringify({ error: 'Missing projectId or searchQuery' }), { status: 400 });
-    }
 
     const { data: project } = await supabase
         .from('projects')
@@ -64,7 +58,6 @@ export async function POST(request: NextRequest)
     }
 
     const managementSupabase = new SupabaseManagementAPI({ accessToken: token.accessToken });
-
     // Fetch the database schema
     const schema = project.databaseStructure;
 
@@ -85,6 +78,15 @@ export async function POST(request: NextRequest)
                                 enum: ['text', 'table', 'bar chart', 'line chart', 'pie chart', 'scatter plot', 'time series', 'heatmap', 'histogram']
                             }
                         },
+                        chartDetails: {
+                            type: 'object',
+                            description: 'Details about the chart being generated, such as labels, axes, and titles. They must be the name of the column in the query results. Only needed when the data is presentable in a chart format.',
+                            properties: {
+                                xLabel: { type: 'string' },
+                                yLabel: { type: 'string' },
+                                title: { type: 'string' }
+                            }
+                        },
                         chainedQueries: {
                             type: 'array',
                             items: {
@@ -103,7 +105,7 @@ export async function POST(request: NextRequest)
                             items: { type: 'string' }
                         }
                     },
-                    required: ['sqlQuery', 'type']
+                    required: ['chainedQueries', 'type', 'queryExplanation', 'primaryKey']
                 }
             }
         }
@@ -223,126 +225,95 @@ export async function POST(request: NextRequest)
         }))
     ];
 
-    //@ts-expect-error - stream is not in the types
-    const response = await openai.chat.completions.create({
-        model: 'gpt-4o',
-        messages: messages,
-        tools: tools,
-        tool_choice: 'required',
-        temperature: 0
-    });
-
     const streamingResponse = new ReadableStream({
         async start(controller) 
         {
-            if (chatHistory.length > 0)
-                controller.enqueue('\n\n');
-
-            const toolCalls = response.choices[0].message.tool_calls;
-            if (toolCalls && toolCalls.length > 0)
+            try
             {
-                const { 
-                    type,
-                    chainedQueries,
-                    primaryKey
-                } = JSON.parse(toolCalls[0].function.arguments) as { 
+                //@ts-expect-error - stream is not in the types
+                const response = await openai.chat.completions.create({
+                    model: 'gpt-4o',
+                    messages: messages,
+                    tools: tools,
+                    tool_choice: 'required',
+                    temperature: 0.7
+                });
+
+
+                const toolCalls = response.choices[0].message.tool_calls;
+                if (toolCalls && toolCalls.length > 0)
+                {
+                    const { 
+                        type,
+                        chainedQueries,
+                        primaryKey,
+                        chartDetails,
+                    } = JSON.parse(toolCalls[0].function.arguments) as { 
                     type: string[],
                     chainedQueries: { sqlQuery: string, type: string[], queryExplanation: string }[],
-                    primaryKey: string[]
+                    primaryKey: string[],
+                    chartDetails: {
+                        xLabel: string;
+                        yLabel: string;
+                        title: string;
+                    }
                 };
 
-                console.log('Type:', type);
-                console.log('Chained Queries:', chainedQueries);
-                console.log('Primary Key:', primaryKey);
+                    console.log('Type:', type);
+                    console.log('Chained Queries:', chainedQueries);
+                    console.log('Primary Key:', primaryKey);
+                    console.log('Chart Details:', chartDetails);
 
-                try 
-                {
-                    for (const sqlQuery of chainedQueries)
+                    for (const chainedQuery of chainedQueries)
                     {
-                        // controller.enqueue(`\`\`\`sql\n${sqlQuery.sqlQuery}\n\`\`\``);
-
-                        const result = await managementSupabase.runQuery(
-                            project.projectId, 
-                            sqlQuery.sqlQuery
-                        );
-
-                        const primaryKeyValues: PrimaryKeyEntities[] = [];
-                        for (const row of result as unknown as Record<string, any>[])
+                        controller.enqueue(`\n\n=====SQL QUERY=====\n${chainedQuery.sqlQuery}\n=====END SQL QUERY=====\n`);
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                    
+                        try
                         {
-                            for (const pk of primaryKey)
+                            const result = await managementSupabase.runQuery(
+                                project.projectId, 
+                                chainedQuery.sqlQuery
+                            );
+
+                            // now we want to output based on the type with the query explanation and then the result
+                            controller.enqueue(`\n=====TEXT=====\n${chainedQuery.queryExplanation}\n=====END TEXT=====\n`);
+                            // now we want to output based on the type
+                            for (const type of chainedQuery.type)
                             {
-                                const primaryKeyValuesIndex = primaryKeyValues.findIndex(pkv => pkv.primaryKey === pk);
-                                if (primaryKeyValuesIndex === -1)
-                                {
-                                    primaryKeyValues.push({
-                                        primaryKey: pk,
-                                        ids: [row[pk]]
-                                    });
-                                }
-                                else
-                                {
-                                    primaryKeyValues[primaryKeyValuesIndex].ids.push(row[pk]);
-                                }
+                                console.log('Type:', type, 'Result:', result);
+                                await new Promise(resolve => setTimeout(resolve, 250));
+                                controller.enqueue(`\n=====${type.toUpperCase()}=====\n${JSON.stringify(result)}\n=====END ${type.toUpperCase()}=====\n`);
+                                await new Promise(resolve => setTimeout(resolve, 250));
                             }
                         }
-
-                        console.log('Primary Key Values:', primaryKeyValues);
-                        controller.enqueue(`\n=====START_PRIMARY_KEYS=====${JSON.stringify(primaryKeyValues)}=====END_PRIMARY_KEYS=====\n`);
-                        // This allows the controller to send the whole chunk as one and not include the table in the chunk
-                        // that's sent to the client.
-                        await new Promise(resolve => setTimeout(resolve, 75));
-                    
-                        if (Array.isArray(result) && result.length > 0) 
+                        catch (error)
                         {
-                            const markdownTable = convertToMarkdownTable(result);
-                            controller.enqueue(markdownTable);
-                        }
-                        else 
-                        {
-                            controller.enqueue('No results found.');
+                            if (isSupabaseError(error))
+                            {
+                                console.error(error.message);
+                                controller.enqueue(`\n=====ERROR=====\n${error.message}\n=====END ERROR=====\n`);
+                            }
+                            else
+                            {
+                                console.error(error);
+                                controller.enqueue('\n=====ERROR=====\nAn error occurred while executing the query\n=====END ERROR=====\n');
+                            }
                         }
                     }
-                }
-                catch (error) 
-                {
-                    if (isSupabaseError(error))
-                    {
-                        console.error(error);
-                    }
-                    controller.enqueue(`Error executing query: ${error instanceof Error ? error.message : 'Unknown error'}`);
                 }
             }
-
-            controller.close();
+            catch (error)
+            {
+                console.error(error);
+                controller.enqueue('\n=====ERROR=====\nAn error occurred while generating the SQL queries\n=====END ERROR=====\n');
+            }
+            finally
+            {
+                controller.close();
+            }
         },
     });
 
-
     return new Response(streamingResponse, { headers: { 'Content-Type': 'text/plain' }});
-}
-
-function convertToMarkdownTable(data: Record<string, any>[]): string 
-{
-    if (!data || data.length === 0) return 'No results found.';
-
-    // Add headers
-    const headers = Object.keys(data[0]);
-    let markdownTable = `| ${headers.join(' | ')} |\n`;
-    
-    // Add separator row
-    markdownTable += `| ${headers.map(() => '---').join(' | ')} |\n`;
-
-    // Add data rows
-    for (const row of data) 
-    {
-        markdownTable += `| ${headers.map(header => 
-        {
-            const value = row[header];
-            if (value === null || value === undefined) return '';
-            // Escape pipe characters in the content to prevent table formatting issues
-            return String(value).replace(/\|/g, '\\|');
-        }).join(' | ')} |\n`;
-    }
-
-    return markdownTable;
 }

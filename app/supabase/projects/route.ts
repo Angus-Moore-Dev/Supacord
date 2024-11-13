@@ -4,7 +4,6 @@ import { NextResponse } from 'next/server';
 import { isSupabaseError, SupabaseManagementAPI } from 'supabase-management-js';
 
 
-
 export async function GET()
 {
     const supabase = createServerClient();
@@ -33,6 +32,7 @@ export async function GET()
             name: string;
         }[]
     }[] = [];
+
 
     try
     {
@@ -69,7 +69,5 @@ export async function GET()
             console.error(error.message);
         else
             console.error(error);
-
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }
