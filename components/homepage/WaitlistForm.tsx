@@ -69,7 +69,6 @@ export default function WaitlistForm()
     {
         if (localStorage.getItem('submitted-email'))
         {
-            setEmail(localStorage.getItem('submitted-email') ?? '');
             setHasFilledOutAlready(true);
         }
     }, []);
