@@ -9,81 +9,45 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      conversation_messages: {
+      notebook_entries: {
         Row: {
-          conversationId: string
           createdAt: string
           id: string
-          isAI: boolean
           messageText: string
-          tabId: string
+          notebookId: string
+          outputs: Json[]
+          sqlQueries: string[]
+          userPrompt: string
         }
         Insert: {
-          conversationId: string
           createdAt?: string
           id?: string
-          isAI: boolean
           messageText: string
-          tabId: string
+          notebookId: string
+          outputs: Json[]
+          sqlQueries: string[]
+          userPrompt: string
         }
         Update: {
-          conversationId?: string
           createdAt?: string
           id?: string
-          isAI?: boolean
           messageText?: string
-          tabId?: string
+          notebookId?: string
+          outputs?: Json[]
+          sqlQueries?: string[]
+          userPrompt?: string
         }
         Relationships: [
           {
             foreignKeyName: "conversation_messages_conversationId_fkey"
-            columns: ["conversationId"]
+            columns: ["notebookId"]
             isOneToOne: false
-            referencedRelation: "conversations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "conversation_messages_tabId_fkey"
-            columns: ["tabId"]
-            isOneToOne: false
-            referencedRelation: "conversation_tabs"
+            referencedRelation: "notebooks"
             referencedColumns: ["id"]
           },
         ]
       }
-      conversation_tabs: {
-        Row: {
-          conversationId: string
-          createdAt: string
-          id: string
-          position: number
-          title: string
-        }
-        Insert: {
-          conversationId: string
-          createdAt?: string
-          id?: string
-          position: number
-          title?: string
-        }
-        Update: {
-          conversationId?: string
-          createdAt?: string
-          id?: string
-          position?: number
-          title?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "conversation_tabs_conversationId_fkey"
-            columns: ["conversationId"]
-            isOneToOne: false
-            referencedRelation: "conversations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      conversations: {
+      notebooks: {
         Row: {
           createdAt: string
           id: string

@@ -1,11 +1,12 @@
 'use client';
 
 import { OutputType, Project } from '@/lib/global.types';
-import { Button, Loader, Tabs, Textarea } from '@mantine/core';
+import { Button, Code, Divider, Loader, Tabs, Textarea } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { Database, Plus, Search, User2 } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { TableVisual } from './generative_ui/TableVisual';
+import BarChartVisual from './generative_ui/BarChartVisual';
 
 
 interface Section {
@@ -26,6 +27,8 @@ export default function VisualiserUI({ project }: VisualiserUIProps)
     const [isHovering, setIsHovering] = useState(false);
     const [isMacroHovering, setIsMacroHovering] = useState(false);
     const [userSearch, setUserSearch] = useState('');
+
+    // TODO: rewrite this over to a notebookentry list.
     const [messages, setMessages] = useState<{
         type: 'ai' | 'user';
         content: string;
@@ -182,7 +185,7 @@ export default function VisualiserUI({ project }: VisualiserUIProps)
             </Button>
             <div className='mt-3 flex flex-col gap-1'>
                 <h4 className='line-clamp-1'>
-                    Previous Conversation that goes on forever and forever and forever and ever and ever and ever.
+                    Notebooks go here
                 </h4>
             </div>
         </section>
@@ -202,35 +205,41 @@ export default function VisualiserUI({ project }: VisualiserUIProps)
                             {
                                 messages.length === 0 && <div className='text-center text-neutral-500 font-medium flex-grow flex flex-col gap-3 items-center justify-center h-full'>
                                     <Database size={64} />
-                                    Start a new conversation by entering a search query below.
+                                    Start a new notebook by entering a search query below.
                                 </div>
                             }
                             {
-                                messages.map((message, index) => <div key={index} className={`${message.type === 'user' ? 'bg-neutral-500 text-white' : 'bg-[#2a2a2a]'} p-4 px-8 rounded-md mb-2 whitespace-pre-line flex flex-col gap-3`}>
+                                messages.map((message, index) => <div key={index} className={'bg-[#2a2a2a] p-4 px-8 rounded-md mb-2 whitespace-pre-line flex flex-col gap-3'}>
                                     {
                                         message.type === 'user' &&
-                                        <div className='flex flex-col gap-1'>
-                                            <div className='flex gap-3'>
-                                                <User2 size={24} />
-                                                <h4>
-                                                    You Wrote:
-                                                </h4>
-                                            </div>
-                                            <p className='font-medium'>
+                                        <div className='flex gap-2 items-start'>
+                                            <User2 size={32} className='text-transparent fill-green-500' />
+                                            <h3 className='font-bold text-green-500'>
                                                 {message.content}
-                                            </p>
+                                            </h3>
+                                        </div>
+                                    }
+                                    <Divider />
+                                    {
+                                        // if the latest message is a user, we temporarily mimic a fake message with just a loader
+                                        messages.length > 0 && messages[messages.length - 1].type === 'user' &&
+                                        <div className='bg-[#2a2a2a] p-4 px-8 rounded-md mb-2 whitespace-pre-line flex flex-col gap-3'>
+                                            <Loader size={32} />
+                                            <h4>
+                                                Loading response...
+                                            </h4>
                                         </div>
                                     }
                                     {
-                                        message.type === 'ai' &&
-                                        message.chunks.map((chunk, index) => 
+                                        message.type === 'user' && messages[index + 1] && messages[index + 1].type === 'ai' &&
+                                        messages[index + 1].chunks.map((chunk, index) => 
                                         {
                                             const section = extractSection(chunk);
                                             if (!section)
                                                 return <p key={index} className='text-neutral-500 font-medium'>
                                                     {chunk}
                                                 </p>;
-
+    
                                             switch (section.type.toLowerCase())
                                             {
                                             case OutputType.SQL:
@@ -238,14 +247,9 @@ export default function VisualiserUI({ project }: VisualiserUIProps)
                                                     <h4 className='text-neutral-500 font-medium'>
                                                         SQL Query Run on Database
                                                     </h4>
-                                                    <Textarea
-                                                        value={section.content}
-                                                        className='w-full'
-                                                        minRows={5}
-                                                        maxRows={20}
-                                                        resize='vertical'
-                                                        readOnly
-                                                    />
+                                                    <Code lang='sql'>
+                                                        {section.content}
+                                                    </Code>
                                                 </div>;
                                             case OutputType.Text:
                                                 return <p key={index} className='font-medium whitespace-pre-wrap'>
@@ -253,22 +257,17 @@ export default function VisualiserUI({ project }: VisualiserUIProps)
                                                 </p>;
                                             case OutputType.Table:
                                                 return <TableVisual key={index} data={JSON.parse(section.content)} />;
+                                            case OutputType.BarChart:
+                                                return <BarChartVisual
+                                                    key={index}
+                                                    content={JSON.parse(section.content)}
+                                                />;
                                             default:
                                                 return `TO BE ADDED: ${section.type}`;
                                             }
                                         })
                                     }
                                 </div>)
-                            }
-                            {
-                                // if the latest message is a user, we temporarily mimic a fake message with just a loader
-                                messages.length > 0 && messages[messages.length - 1].type === 'user' &&
-                                <div className='bg-[#2a2a2a] p-4 px-8 rounded-md mb-2 whitespace-pre-line flex flex-col gap-3'>
-                                    <Loader size={32} />
-                                    <h4>
-                                        Loading response...
-                                    </h4>
-                                </div>
                             }
                         </section>
                         <div className='flex flex-row gap-3 bg-[#0e0e0e] p-2 sticky bottom-0'>

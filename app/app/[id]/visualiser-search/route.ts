@@ -80,11 +80,11 @@ export async function POST(request: NextRequest)
                         },
                         chartDetails: {
                             type: 'object',
-                            description: 'Details about the chart being generated, such as labels, axes, and titles. They must be the name of the column in the query results. Only needed when the data is presentable in a chart format.',
+                            description: 'Labels for the data that would be used in a chart. MUST BE THE SAME AS THE COLUMN NAMES IN THE RESULTING QUERY, OTHERWISE IT WILL FAIL.',
                             properties: {
                                 xLabel: { type: 'string' },
                                 yLabel: { type: 'string' },
-                                title: { type: 'string' }
+                                title: { type: 'string' },
                             }
                         },
                         chainedQueries: {
@@ -121,6 +121,7 @@ export async function POST(request: NextRequest)
             - Generate SQL queries that are valid, accurate, and immediately executable against the given database schema.
             - Your queries will be used directly to interact with the database, so ensure they are free from syntax errors and logically correct.
             - Identify and utilize columns that could be used as enums (e.g., status types, categories) for more efficient querying.
+            - For aggregate queries, use appropriate SQL functions that don't require GROUP BY clauses when possible.
 
             2. User-Database Interface:
             - Act as a translator between natural language user inputs and SQL queries.
@@ -236,7 +237,7 @@ export async function POST(request: NextRequest)
                     messages: messages,
                     tools: tools,
                     tool_choice: 'required',
-                    temperature: 0.7
+                    temperature: 0.3
                 });
 
 
@@ -281,10 +282,30 @@ export async function POST(request: NextRequest)
                             // now we want to output based on the type
                             for (const type of chainedQuery.type)
                             {
-                                console.log('Type:', type, 'Result:', result);
-                                await new Promise(resolve => setTimeout(resolve, 250));
-                                controller.enqueue(`\n=====${type.toUpperCase()}=====\n${JSON.stringify(result)}\n=====END ${type.toUpperCase()}=====\n`);
-                                await new Promise(resolve => setTimeout(resolve, 250));
+                                // if it's a chart type, we want to output the chart details formatted against the results
+                                // so that we send one JSON object that's already mapped to the chart details
+                                if (type.includes('chart'))
+                                {
+                                    const { xLabel, yLabel, title } = chartDetails;
+                                    const chartData = {
+                                        xLabel,
+                                        yLabel,
+                                        title,
+                                        data: result
+                                    };
+
+                                    console.log('Type:', type, 'is being sent to the client');
+                                    await new Promise(resolve => setTimeout(resolve, 250));
+                                    controller.enqueue(`\n=====${type.toUpperCase()}=====\n${JSON.stringify(chartData)}\n=====END ${type.toUpperCase()}=====\n`);
+                                    await new Promise(resolve => setTimeout(resolve, 250));
+                                }
+                                else
+                                {
+                                    console.log('Type:', type, 'is being sent to the client');
+                                    await new Promise(resolve => setTimeout(resolve, 250));
+                                    controller.enqueue(`\n=====${type.toUpperCase()}=====\n${JSON.stringify(result)}\n=====END ${type.toUpperCase()}=====\n`);
+                                    await new Promise(resolve => setTimeout(resolve, 250));
+                                }
                             }
                         }
                         catch (error)

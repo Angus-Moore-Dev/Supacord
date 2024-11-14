@@ -3,8 +3,9 @@ import { Database } from './database.types';
 export type SupabaseToken = Database['public']['Tables']['supabase_access_tokens']['Row'];
 
 export type Project = Database['public']['Tables']['projects']['Row'];
+export type Notebook = Database['public']['Tables']['notebooks']['Row'];
+export type NotebookEntry = Omit<Database['public']['Tables']['notebook_entries']['Row'], 'outputs'> & { outputs: NotebookEntryOutput[] };
 
-export type Conversation = Database['public']['Tables']['conversations']['Row'];
 
 export type EntityData = {
     columnName: string;
@@ -83,4 +84,9 @@ export type SearchStreamOutput = {
         yLabel: string;
         title: string;
     } | undefined;
+}
+
+export type NotebookEntryOutput = {
+    version: number;
+    results: string[]; // could be multiple types, also stored unformatted as the stream outputs it.
 }

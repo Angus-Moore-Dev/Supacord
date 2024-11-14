@@ -12,7 +12,8 @@ export function TableVisual(props: { data: TableData }): JSX.Element
     const formatHeader = (header: string): string => 
     {
         return header
-            .split('_')
+            // .split('_') // change this to snake_case and other.types or other-types or CamelCase
+            .split(/_|\.|\s/)
             .map((word: string): string => word.charAt(0).toUpperCase() + word.slice(1))
             .join(' ');
     };
@@ -25,8 +26,8 @@ export function TableVisual(props: { data: TableData }): JSX.Element
     };
 
     return (
-        <Table striped highlightOnHover withColumnBorders>
-            <Table.Thead>
+        <Table striped highlightOnHover withTableBorder withColumnBorders stickyHeader>
+            <Table.Thead className='bg-green-500 text-white'>
                 <Table.Tr>
                     {columns.map((column: string): JSX.Element => (
                         <Table.Th key={column}>
