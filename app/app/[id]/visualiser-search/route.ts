@@ -75,7 +75,7 @@ export async function POST(request: NextRequest)
                             description: 'The recommended visualization format(s) for the query results',
                             items: {
                                 type: 'string',
-                                enum: ['text', 'table', 'bar chart', 'line chart', 'pie chart', 'scatter plot', 'time series', 'heatmap', 'histogram']
+                                enum: ['text', 'table', 'bar chart', 'line chart', 'pie chart', 'scatter plot', 'heatmap']
                             }
                         },
                         chartDetails: {

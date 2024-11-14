@@ -6,7 +6,7 @@ import { notifications } from '@mantine/notifications';
 import { Database, Plus, Search, User2 } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { TableVisual } from './generative_ui/TableVisual';
-import BarChartVisual from './generative_ui/BarChartVisual';
+import LineChartVisual, { BarChartVisual, PieChartVisual } from './generative_ui/ChartVisuals';
 
 
 interface Section {
@@ -259,6 +259,16 @@ export default function VisualiserUI({ project }: VisualiserUIProps)
                                                 return <TableVisual key={index} data={JSON.parse(section.content)} />;
                                             case OutputType.BarChart:
                                                 return <BarChartVisual
+                                                    key={index}
+                                                    content={JSON.parse(section.content)}
+                                                />;
+                                            case OutputType.LineChart:
+                                                return <LineChartVisual
+                                                    key={index}
+                                                    content={JSON.parse(section.content)}
+                                                />;
+                                            case OutputType.PieChart:
+                                                return <PieChartVisual
                                                     key={index}
                                                     content={JSON.parse(section.content)}
                                                 />;

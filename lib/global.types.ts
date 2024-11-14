@@ -71,11 +71,9 @@ export enum OutputType
     LineChart = 'line chart',
     PieChart = 'pie chart',
     ScatterPlot = 'scatter plot',
-    TimeSeries = 'time series',
-    Heatmap = 'heatmap',
-    Histogram = 'histogram',
-
+    Heatmap = 'heatmap', // TODO: @mantine/charts does not support this.
 }
+
 export type SearchStreamOutput = {
     content: string; // unformatted content
     type: OutputType;
