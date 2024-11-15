@@ -1,7 +1,7 @@
 'use client';
 import { 
+    AreaChart,
     BarChart, 
-    LineChart,
     PieChart,
 } from '@mantine/charts';
 
@@ -40,7 +40,7 @@ export function BarChartVisual({ content }: ChartingVisualProps): JSX.Element
 
 export default function LineChartVisual({ content }: ChartingVisualProps): JSX.Element
 {
-    return <LineChart
+    return <AreaChart
         h={375}
         w={'100%'}
         data={content.data}
