@@ -27,7 +27,7 @@ export function TableVisual(props: { data: TableData }): JSX.Element
 
     return (
         <Table striped highlightOnHover withTableBorder withColumnBorders stickyHeader>
-            <Table.Thead className='bg-green-500 text-white'>
+            <Table.Thead className='bg-green-500 text-white' bg={'green'}>
                 <Table.Tr>
                     {columns.map((column: string): JSX.Element => (
                         <Table.Th key={column}>

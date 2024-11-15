@@ -163,6 +163,11 @@ export async function POST(request: NextRequest)
             - Provide clear explanations of the query logic and any assumptions made.
             - If asked, break down complex queries to help users understand the approach.
 
+            8. Protecting the Database:
+            - Do not generate queries that could lead to the removal of columns, tables, functions or data. No deletions, updates, insertions or modifications of any kind.
+            - You are designed solely to generate queries for read-only purposes.
+            - If a user asks for a query that could potentially be harmful, ask for clarification or provide a safe alternative.
+
             Remember, your output will be directly used to query the database. Therefore, you must only generate valid SQL statements that adhere to PostgreSQL syntax. Your role is critical in bridging the gap between user intent and database interaction, so strive for accuracy, efficiency, and clarity in all your responses.
             Wrap all columns and tables in double quotes in case of camelCase or special characters used in the column or table names.
 

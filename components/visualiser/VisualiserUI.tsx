@@ -3,7 +3,7 @@
 import { OutputType, Project } from '@/lib/global.types';
 import { Button, Code, Divider, Loader, Tabs, Textarea } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { Database, Plus, Search, User2 } from 'lucide-react';
+import { Database, Pencil, Plus, RotateCw, Search, User2 } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { TableVisual } from './generative_ui/TableVisual';
 import LineChartVisual, { BarChartVisual, PieChartVisual } from './generative_ui/ChartVisuals';
@@ -36,7 +36,6 @@ export default function VisualiserUI({ project }: VisualiserUIProps)
     }[]>([]);
 
     const [isSendingMessage, setIsSendingMessage] = useState(false);
-
 
     async function sendMessage()
     {
@@ -244,10 +243,20 @@ export default function VisualiserUI({ project }: VisualiserUIProps)
                                             {
                                             case OutputType.SQL:
                                                 return <div key={index} className='flex flex-col gap-1'>
-                                                    <h4 className='text-neutral-500 font-medium'>
-                                                        SQL Query Run on Database
-                                                    </h4>
-                                                    <Code lang='sql'>
+                                                    <section className='flex items-end justify-between'>
+                                                        <h4 className='text-neutral-500 font-medium'>
+                                                            SQL Query Run on Database
+                                                        </h4>
+                                                        <div className='flex'>
+                                                            <Button size='xs' variant='outline'>
+                                                                <Pencil size={16} />
+                                                            </Button>
+                                                            <Button size='xs' variant='outline'>
+                                                                <RotateCw size={16} />
+                                                            </Button>
+                                                        </div>
+                                                    </section>
+                                                    <Code lang='sql' p={'md'}>
                                                         {section.content}
                                                     </Code>
                                                 </div>;
