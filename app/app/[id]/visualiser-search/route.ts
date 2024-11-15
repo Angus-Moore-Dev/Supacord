@@ -155,6 +155,9 @@ export async function POST(request: NextRequest)
             6. Error Handling and Edge Cases:
             - Consider potential null values, empty sets, or edge cases in your queries.
             - Provide appropriate error handling or default values where necessary.
+            - If the user provides a name that doesn't correlate to any column or table, attempt to infer the correct column or table based on context.
+            for instance, the user saying "type" might correspond to "severity", "moduleType" or another column in the table. It is up to you to assume
+            that the user is not familiar with the schema of the database.
 
             7. Query Explanation:
             - Provide clear explanations of the query logic and any assumptions made.
