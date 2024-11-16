@@ -1,9 +1,9 @@
 'use client';
 
 import { OutputType, Project } from '@/lib/global.types';
-import { Button, Code, Divider, Loader, Tabs, Textarea } from '@mantine/core';
+import { Button, Code, Divider, Loader, Textarea } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { Database, Pencil, Plus, RotateCw, Search, User2 } from 'lucide-react';
+import { BookPlus, Database, Pencil, RotateCw, Search, User2 } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { TableVisual } from './generative_ui/TableVisual';
 import LineChartVisual, { BarChartVisual, PieChartVisual } from './generative_ui/ChartVisuals';
@@ -174,13 +174,17 @@ export default function VisualiserUI({ project }: VisualiserUIProps)
         <section
             ref={sideBarRef}
             className={`
-                flex flex-col h-full max-h-full overflow-y-auto bg-[#0e0e0e] border-r-[1px] border-r-neutral-700 p-4 py-8 transition-all duration-300 z-50 absolute
+                flex flex-col h-full max-h-full overflow-y-auto bg-[#0e0e0e] border-r-[1px] border-r-neutral-700 p-4 transition-all duration-300 z-50 absolute
                 ${isHovering ? 'w-[500px] bg-opacity-75 backdrop-blur-sm' : 'w-[250px]'}`}
             onMouseOver={() => setIsHovering(true)}
             onMouseLeave={() => setIsHovering(false)}
         >
-            <Button fullWidth={false} className='max-w-fit' variant='outline' size='xs' rightSection={<Plus size={16} />}>
-                Start New Session
+            <h4 className='line-clamp-2'> 
+                {project.databaseName}
+            </h4>
+            <Divider className='my-4' />
+            <Button fullWidth={false} variant='outline' size='xs' rightSection={<BookPlus size={16} />}>
+                Create New Notebook
             </Button>
             <div className='mt-3 flex flex-col gap-1'>
                 <h4 className='line-clamp-1'>
@@ -189,48 +193,38 @@ export default function VisualiserUI({ project }: VisualiserUIProps)
             </div>
         </section>
         <section className='flex-grow max-w-[calc(100vw-500px)] ml-[250px] border-x-[1px] border-neutral-700'>
-            <Tabs defaultValue={'Visualisation'} variant='pills' className='h-[calc(100vh-50px-46px)]'>
-                <Tabs.List className='bg-[#0e0e0e]' grow>
-                    <Tabs.Tab value='Visualisation'>
-                        Visualisation & Queries
-                    </Tabs.Tab>
-                    <Tabs.Tab value='Relationships'>
-                        Relationships Explorer
-                    </Tabs.Tab>
-                </Tabs.List>
-                <Tabs.Panel value='Visualisation' className='flex-grow h-full'>
-                    <div className='h-full flex-grow flex flex-col'>
-                        <section className='flex-grow h-full overflow-y-auto max-h-full flex flex-col gap-3 p-4'>
-                            {
-                                messages.length === 0 && <div className='text-center text-neutral-500 font-medium flex-grow flex flex-col gap-3 items-center justify-center h-full'>
-                                    <Database size={64} />
+            <div className='h-full flex-grow flex flex-col'>
+                <section className='flex-grow h-full overflow-y-auto max-h-full flex flex-col gap-3 p-4'>
+                    {
+                        messages.length === 0 && <div className='text-center text-neutral-500 font-medium flex-grow flex flex-col gap-3 items-center justify-center h-full'>
+                            <Database size={64} />
                                     Start a new notebook by entering a search query below.
-                                </div>
-                            }
+                        </div>
+                    }
+                    {
+                        messages.map((message, index) => <div key={index} className={'bg-[#2a2a2a] p-4 px-8 rounded-md mb-2 whitespace-pre-line flex flex-col gap-3'}>
                             {
-                                messages.map((message, index) => <div key={index} className={'bg-[#2a2a2a] p-4 px-8 rounded-md mb-2 whitespace-pre-line flex flex-col gap-3'}>
-                                    {
-                                        message.type === 'user' &&
+                                message.type === 'user' &&
                                         <div className='flex gap-2 items-start'>
                                             <User2 size={32} className='text-transparent fill-green-500' />
                                             <h3 className='font-bold text-green-500'>
                                                 {message.content}
                                             </h3>
                                         </div>
-                                    }
-                                    <Divider />
-                                    {
-                                        // if the latest message is a user, we temporarily mimic a fake message with just a loader
-                                        messages.length > 0 && messages[messages.length - 1].type === 'user' &&
+                            }
+                            <Divider />
+                            {
+                                // if the latest message is a user, we temporarily mimic a fake message with just a loader
+                                messages.length > 0 && messages[messages.length - 1].type === 'user' &&
                                         <div className='bg-[#2a2a2a] p-4 px-8 rounded-md mb-2 whitespace-pre-line flex flex-col gap-3'>
                                             <Loader size={32} />
                                             <h4>
                                                 Loading response...
                                             </h4>
                                         </div>
-                                    }
-                                    {
-                                        message.type === 'user' && messages[index + 1] && messages[index + 1].type === 'ai' &&
+                            }
+                            {
+                                message.type === 'user' && messages[index + 1] && messages[index + 1].type === 'ai' &&
                                         messages[index + 1].chunks.map((chunk, index) => 
                                         {
                                             const section = extractSection(chunk);
@@ -285,46 +279,34 @@ export default function VisualiserUI({ project }: VisualiserUIProps)
                                                 return `TO BE ADDED: ${section.type}`;
                                             }
                                         })
-                                    }
-                                </div>)
                             }
-                        </section>
-                        <div className='flex flex-row gap-3 bg-[#0e0e0e] p-2 sticky bottom-0'>
-                            <Textarea
-                                disabled={isSendingMessage}
-                                value={userSearch}
-                                onChange={(event) => setUserSearch(event.currentTarget.value)}
-                                placeholder='What do you want to visualise?'
-                                className='w-full'
-                                minRows={5}
-                                maxRows={20}
-                                resize='vertical'
-                                onKeyDown={e => 
-                                {
-                                    if (e.key === 'Enter' && !e.shiftKey)
-                                    {
-                                        e.preventDefault();
-                                        sendMessage();
-                                    }
-                                }}
-                            />
-                            <Button onClick={sendMessage} loading={isSendingMessage}>
-                                <Search size={24} />
-                            </Button>
-                        </div>
-                    </div>
-                </Tabs.Panel>
-                <Tabs.Panel value='Relationships'className='flex-grow h-full'>
-                    <div className='h-full flex-grow flex flex-col'>
-                        <section className='flex-grow h-full overflow-y-auto max-h-full'>
-                            Relationships Section
-                        </section>
-                    </div>
-                </Tabs.Panel>
-                <Tabs.Panel value='Preferences'>
-                    Preferences Panel
-                </Tabs.Panel>
-            </Tabs>
+                        </div>)
+                    }
+                </section>
+                <div className='flex flex-row gap-3 bg-[#0e0e0e] p-2 sticky bottom-0'>
+                    <Textarea
+                        disabled={isSendingMessage}
+                        value={userSearch}
+                        onChange={(event) => setUserSearch(event.currentTarget.value)}
+                        placeholder='What do you want to visualise?'
+                        className='w-full'
+                        minRows={5}
+                        maxRows={20}
+                        resize='vertical'
+                        onKeyDown={e => 
+                        {
+                            if (e.key === 'Enter' && !e.shiftKey)
+                            {
+                                e.preventDefault();
+                                sendMessage();
+                            }
+                        }}
+                    />
+                    <Button onClick={sendMessage} loading={isSendingMessage}>
+                        <Search size={24} />
+                    </Button>
+                </div>
+            </div>
         </section>
         <section
             ref={savedMacroRef}
