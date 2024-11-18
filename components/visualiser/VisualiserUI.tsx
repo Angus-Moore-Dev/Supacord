@@ -192,13 +192,13 @@ export default function VisualiserUI({ project }: VisualiserUIProps)
                 </h4>
             </div>
         </section>
-        <section className='flex-grow max-w-[calc(100vw-500px)] ml-[250px] border-x-[1px] border-neutral-700'>
+        <section className='flex-grow max-w-[calc(100vw-500px)] max-h-[calc(100vh-60px)] ml-[250px] border-x-[1px] border-neutral-700'>
             <div className='h-full flex-grow flex flex-col'>
                 <section className='flex-grow h-full overflow-y-auto max-h-full flex flex-col gap-3 p-4'>
                     {
                         messages.length === 0 && <div className='text-center text-neutral-500 font-medium flex-grow flex flex-col gap-3 items-center justify-center h-full'>
                             <Database size={64} />
-                                    Start a new notebook by entering a search query below.
+                            Start a new notebook by entering a search query below.
                         </div>
                     }
                     {
@@ -232,7 +232,7 @@ export default function VisualiserUI({ project }: VisualiserUIProps)
                                                 return <p key={index} className='text-neutral-500 font-medium'>
                                                     {chunk}
                                                 </p>;
-    
+
                                             switch (section.type.toLowerCase())
                                             {
                                             case OutputType.SQL:

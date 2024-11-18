@@ -116,32 +116,29 @@ export type Database = {
         Row: {
           createdAt: string
           databaseName: string
-          databaseStructure: Json
+          databaseStructure: Json[]
           id: string
           organisationId: string
           profileId: string
           projectId: string
-          selectedSchema: string
         }
         Insert: {
           createdAt?: string
           databaseName: string
-          databaseStructure?: Json
+          databaseStructure: Json[]
           id?: string
           organisationId: string
           profileId: string
           projectId: string
-          selectedSchema: string
         }
         Update: {
           createdAt?: string
           databaseName?: string
-          databaseStructure?: Json
+          databaseStructure?: Json[]
           id?: string
           organisationId?: string
           profileId?: string
           projectId?: string
-          selectedSchema?: string
         }
         Relationships: [
           {

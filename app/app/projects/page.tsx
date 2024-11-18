@@ -1,5 +1,6 @@
 import { createServerClient } from '@/utils/supabaseServer';
 import ProjectsTable from '@/components/projects/ProjectsTable';
+import CreateNewProject from '@/components/projects/CreateNewProject';
 
 
 export default async function ProjectsPage()
@@ -16,10 +17,14 @@ export default async function ProjectsPage()
         </div>;
     }
 
+
     return <div className='w-full flex flex-col gap-5 px-16 py-8'>
-        <h1>
-            Projects
-        </h1>
+        <section className='w-full flex gap-3 justify-between'>
+            <h1>
+                Projects
+            </h1>
+            <CreateNewProject />
+        </section>
         <ProjectsTable projects={data} />
     </div>;
 }

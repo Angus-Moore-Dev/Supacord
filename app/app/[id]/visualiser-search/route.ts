@@ -145,6 +145,7 @@ export async function POST(request: NextRequest)
                 e. Propose scatter plots for showing relationships between two variables.
                 f. Recommend time series charts for data with timestamps.
                 g. Suggest radial charts for categorical data where a bar chart is not suitable.
+            - Supabase databases have public as their default schema, so unless explicitly stated to refer to another schema, assume that we're referencing the public schema.
 
             5. Schema Awareness and Optimization:
             - Utilize your knowledge of the database schema to create optimal queries.
@@ -171,7 +172,6 @@ export async function POST(request: NextRequest)
             Remember, your output will be directly used to query the database. Therefore, you must only generate valid SQL statements that adhere to PostgreSQL syntax. Your role is critical in bridging the gap between user intent and database interaction, so strive for accuracy, efficiency, and clarity in all your responses.
             Wrap all columns and tables in double quotes in case of camelCase or special characters used in the column or table names.
 
-            all tables, functions, views, materialized views, triggers, and indexes are under the schema: "${project.selectedSchema}". Do not reference any other schema unless it's through a foreign key relationship.
             When returning a row from a table, ensure that the primary key comes first and is labelled as "schema.table_name.key". We need this for additional functionality for data visualisation (so we can recognise
             what nodes are being referred to in the graph). For instance, "profiles.id" would be "public"."profiles"."id", or "investments.investmentNumberId" would be "public"."investments"."investmentNumberId".
 
@@ -221,7 +221,7 @@ export async function POST(request: NextRequest)
                 }>;
             }
 
-            Here is the schema:
+            Here is the structure of the database, listen in a JSON[] format:
             
             \`\`\`json
             ${JSON.stringify(schema, null, 2)}

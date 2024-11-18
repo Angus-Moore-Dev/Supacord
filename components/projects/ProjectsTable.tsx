@@ -15,7 +15,7 @@ interface ProjectsTableProps
 export default function ProjectsTable({ projects }: ProjectsTableProps)
 {
     return <Table withColumnBorders withTableBorder withRowBorders stickyHeader striped>
-        <Table.Thead bg={'green'} className='font-medium text-lg'>
+        <Table.Thead bg={'green'} className='font-semibold text-lg'>
             <Table.Tr>
                 <Table.Td>
                     Database Name
@@ -24,10 +24,10 @@ export default function ProjectsTable({ projects }: ProjectsTableProps)
                     Organisation ID
                 </Table.Td>
                 <Table.Td>
-                    Project ID (Supabase)
+                    Project ID
                 </Table.Td>
                 <Table.Td>
-                    Created At
+                    Created On
                 </Table.Td>
                 <Table.Td>
                     Actions

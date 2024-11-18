@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, Checkbox, Select, Skeleton } from '@mantine/core';
+import { Button, Select, Skeleton } from '@mantine/core';
 import { useEffect, useState } from 'react';
 import ConnectWithSupabase from '../ConnectWithSupabase';
 import { Plus } from 'lucide-react';
@@ -16,9 +16,6 @@ export default function NewProjectImport()
 
     const [selectedOrganisation, setSelectedOrganisation] = useState<string>('');
     const [selectedProject, setSelectedProject] = useState<string>('');
-
-    const [projectSchemas, setProjectSchemas] = useState<string[]>([]);
-    const [selectedSchema, setSelectedSchema] = useState('');
     
     const [isCreating, setIsCreating] = useState(false);
 
@@ -33,7 +30,6 @@ export default function NewProjectImport()
                 projectId: selectedProject,
                 organisationName: organisations.find(org => org.id === selectedOrganisation)!.name,
                 projectName: projects.find(project => project.id === selectedProject)!.name,
-                schema: selectedSchema,
             })
         });
         if (response.ok)
@@ -84,26 +80,8 @@ export default function NewProjectImport()
                 setSelectedProject('');
             }
             console.log(projectsForOrganisation);
-            setProjectSchemas([]);
-            setSelectedSchema('');
         }
     }, [selectedOrganisation]);
-
-
-    useEffect(() => 
-    {
-        if (selectedProject)
-        {
-            setProjectSchemas([]);
-            setSelectedSchema('');
-            fetch('/supabase/database/schemas', {
-                method: 'POST',
-                body: JSON.stringify({ organisationId: selectedOrganisation, projectId: selectedProject })
-            })
-                .then(res => res.json())
-                .then(data => setProjectSchemas(data));
-        }
-    }, [selectedProject]);
 
 
     return <div className="flex flex-col gap-5">
@@ -151,69 +129,9 @@ export default function NewProjectImport()
                     placeholder='Select Project'
                     className='max-w-[300px]'
                 />
-                <section className='flex gap-10'>
-                    <div className='flex flex-col gap-5'>
-                        {
-                            selectedProject &&
-                            <h3 className='mt-3'>
-                                Select Schema
-                            </h3>
-                        }
-                        {
-                            selectedProject && projectSchemas.length === 0 &&
-                            <>
-                                <div className='flex gap-3 items-center'>
-                                    <Skeleton w={30} h={30} />
-                                    <Skeleton w={260} h={30} />
-                                </div>
-                                <div className='flex gap-3 items-center'>
-                                    <Skeleton w={30} h={30} />
-                                    <Skeleton w={260} h={30} />
-                                </div>
-                                <div className='flex gap-3 items-center'>
-                                    <Skeleton w={30} h={30} />
-                                    <Skeleton w={260} h={30} />
-                                </div>
-                                <div className='flex gap-3 items-center'>
-                                    <Skeleton w={30} h={30} />
-                                    <Skeleton w={260} h={30} />
-                                </div>
-                                <div className='flex gap-3 items-center'>
-                                    <Skeleton w={30} h={30} />
-                                    <Skeleton w={260} h={30} />
-                                </div>
-                                <div className='flex gap-3 items-center'>
-                                    <Skeleton w={30} h={30} />
-                                    <Skeleton w={260} h={30} />
-                                </div>
-                            </>
-                        }
-                        {
-                            selectedProject && projectSchemas.length > 0 &&
-                            <div className='flex gap-5'>
-                                <div className='flex flex-col gap-5'>
-                                    {
-                                        projectSchemas.map(schema =>
-                                            <div key={schema} className='flex gap-3 items-center'>
-                                                <Checkbox
-                                                    disabled={isCreating}
-                                                    checked={selectedSchema === schema}
-                                                    onChange={e => setSelectedSchema(e.target.checked ? schema : '')}
-                                                />
-                                                <label htmlFor={schema}>
-                                                    {schema}
-                                                </label>
-                                            </div>
-                                        )
-                                    }
-                                </div>
-                            </div>
-                        }
-                    </div>
-                </section>
             </>
         }
-        <Button variant='white' disabled={!selectedOrganisation || !selectedProject || !selectedSchema} rightSection={<Plus />}
+        <Button variant='white' disabled={!selectedOrganisation || !selectedProject} rightSection={<Plus />}
             loading={isCreating}
             fullWidth={false}
             className='max-w-fit'

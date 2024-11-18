@@ -1,10 +1,9 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import accessTokenRefresher from '@/utils/accessTokenRefresher';
 import getDatabaseTableStructure from '@/utils/getDatabaseTableStructure';
 import { createServerClient } from '@/utils/supabaseServer';
 import { NextRequest, NextResponse } from 'next/server';
 import { SupabaseManagementAPI } from 'supabase-management-js';
-// import axios from 'axios';
+import { DatabaseSchemaStructure } from '@/lib/global.types';
 
 
 
@@ -17,9 +16,9 @@ export async function POST(request: NextRequest)
     if (!user)
         return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
 
-    const { organisationId, projectId, schema, organisationName, projectName } = await request.json();
+    const { organisationId, projectId, organisationName, projectName } = await request.json();
 
-    if (!organisationId || !projectId || !schema || !organisationName || !projectName)
+    if (!organisationId || !projectId || !organisationName || !projectName)
         return NextResponse.json({ error: 'Missing parameters' }, { status: 400 });
 
     const { data: accessTokens, error } = await supabase
@@ -43,7 +42,21 @@ export async function POST(request: NextRequest)
         return NextResponse.json({ error: 'No token found for organisation' }, { status: 404 });
 
     const managementSupabase = new SupabaseManagementAPI({ accessToken: token.accessToken });
-    const tableStructure = await getDatabaseTableStructure(managementSupabase, projectId, schema);
+
+    // it gets returned as a string[].
+    const schemasResult = await managementSupabase.runQuery(projectId, 'SELECT schema_name FROM information_schema.schemata');
+    const schemas = (schemasResult as unknown as { schema_name: string }[])
+        .map((row: { schema_name: string }) => row.schema_name)
+        .filter((schema: string) => !schema.startsWith('pg_') && schema !== 'information_schema');
+
+    const promiseChain: Promise<DatabaseSchemaStructure>[] = [];
+
+    for (const schema of schemas)
+    {
+        promiseChain.push(getDatabaseTableStructure(managementSupabase, projectId, schema));
+    }
+
+    const schemaStructures = await Promise.all(promiseChain);
 
     const { data: newProject, error: newProjectError } = await supabase
         .from('projects')
@@ -52,8 +65,7 @@ export async function POST(request: NextRequest)
             databaseName: projectName,
             organisationId,
             projectId,
-            selectedSchema: schema,
-            databaseStructure: tableStructure,
+            databaseStructure: schemaStructures
         })
         .select('*')
         .single();
