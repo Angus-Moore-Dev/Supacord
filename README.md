@@ -1,4 +1,4 @@
-![New Supacord GitHub Banner](https://github.com/user-attachments/assets/c0a38e11-cbaf-490d-9efb-3aa730a6dcf0)
+![New Supacord GitHub Banner](https://github.com/user-attachments/assets/2141d96b-a049-4c82-9539-5d36ebbead95)
 
 # Supacord - Supabase Database Visualiser & Investigator
 Supacord is a database designed for realtime analysis and querying of your Supabase project, through natural language.
