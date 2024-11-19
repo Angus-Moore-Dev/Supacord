@@ -1,0 +1,239 @@
+.container {
+    position: relative;
+    width: 155px;
+    height: 155px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transform: scaleX(-1);
+}
+
+.rectangle {
+    position: absolute;
+    width: 80px;
+    height: 100px;
+    border: 15px solid blue;
+    transition: all 1s ease;
+}
+
+.rectangle-1 {
+    border-color: #2a8a3f; /* Lighter blue */
+    animation: loadingAnimation1 2s infinite;
+}
+
+.rectangle-2 {
+    border-color: #41c056; /* Medium blue */
+    animation: loadingAnimation2 2s infinite;
+}
+
+.rectangle-3 {
+    border-color: #25e87c; /* Darker blue */
+    animation: loadingAnimation3 2s infinite;
+}
+
+.shadow-rectangle-2 {
+    border-bottom: 15px solid #41c056; /* Medium blue */
+    border-left: 15px solid #41c056; /* Medium blue */
+    border-right: none;
+    border-top: none;
+    animation: shadowLoadingAnimation2 2s infinite;
+    display: inline;
+}
+
+.shadow-rectangle-3 {
+    border-bottom: 15px solid #25e87c; /* Medium blue */
+    border-left: 15px solid #25e87c; /* Medium blue */
+    border-right: none;
+    border-top: none;
+    animation: shadowLoadingAnimation3 2s infinite;
+    display: inline;
+}
+
+.shadow-rectangle-4 {
+    border-bottom: 15px solid #2a8a3f; /* Medium blue */
+    border-left: 15px solid #2a8a3f; /* Medium blue */
+    border-right: none;
+    border-top: none;
+    animation: shadowLoadingAnimation4 2s infinite;
+    display: inline;
+}
+
+@keyframes loadingAnimation1 {
+    0% {
+        top: 0;
+        left: 5px;
+        z-index: 1;
+    }
+    25% {
+        top: 75px;
+        left: 50px;
+    }
+    50% {
+        top: 0;
+        left: 75px;
+    }
+    75% {
+        top: 50px;
+        left: 50px;
+    }
+    85% {
+        top: 0;
+        left: 5px;
+        z-index: 1;
+    }
+    100% {
+        top: 0;
+        left: 5px;
+        z-index: 1;
+    }
+}
+
+@keyframes loadingAnimation2 {
+    0% {
+        top: 15px;
+        left: 20px;
+        z-index: 2;
+    }
+    25% {
+        top: 0;
+        left: 75px;
+    }
+    50% {
+        top: 50px;
+        left: 50px;
+    }
+    75% {
+        top: 0;
+        left: 0;
+    }
+    85% {
+        top: 15px;
+        left: 20px;
+        z-index: 2;
+    }
+    100% {
+        top: 15px;
+        left: 20px;
+        z-index: 2;
+    }
+}
+
+@keyframes loadingAnimation3 {
+    0% {
+        top: 30px;
+        left: 35px;
+        z-index: 3;
+    }
+    25% {
+        top: 50px;
+        left: 0;
+    }
+    50% {
+        top: 0;
+        left: 0;
+    }
+    75% {
+        top: 25px;
+        left: 25px;
+    }
+    85% {
+        top: 30px;
+        left: 35px;
+        z-index: 3;
+    }
+    100% {
+        top: 30px;
+        left: 35px;
+        z-index: 3;
+    }
+}
+
+@keyframes shadowLoadingAnimation2 {
+    0% {
+        top: 15px;
+        left: 20px;
+        z-index: 5;
+    }
+    25% {
+        top: 0;
+        left: 75px;
+    }
+    50% {
+        top: 50px;
+        left: 50px;
+    }
+    75% {
+        top: 0;
+        left: 0;
+    }
+    85% {
+        top: 15px;
+        left: 20px;
+        z-index: 5;
+    }
+    100% {
+        top: 15px;
+        left: 20px;
+        z-index: 5;
+    }
+}
+
+@keyframes shadowLoadingAnimation3 {
+    0% {
+        top: 30px;
+        left: 35px;
+        z-index: 4;
+    }
+    25% {
+        top: 50px;
+        left: 0;
+    }
+    50% {
+        top: 0;
+        left: 0;
+    }
+    75% {
+        top: 25px;
+        left: 25px;
+    }
+    85% {
+        top: 30px;
+        left: 35px;
+        z-index: 4;
+    }
+    100% {
+        top: 30px;
+        left: 35px;
+        z-index: 4;
+    }
+}
+
+@keyframes shadowLoadingAnimation4 {
+    0% {
+        top: 0;
+        left: 5px;
+        z-index: 6;
+    }
+    25% {
+        top: 75px;
+        left: 50px;
+    }
+    50% {
+        top: 0;
+        left: 75px;
+    }
+    75% {
+        top: 50px;
+        left: 50px;
+    }
+    85% {
+        top: 0;
+        left: 5px;
+        z-index: 6;
+    }
+    100% {
+        top: 0;
+        left: 5px;
+        z-index: 6;
+    }
+}

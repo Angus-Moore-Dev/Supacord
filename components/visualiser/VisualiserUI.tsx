@@ -1,7 +1,7 @@
 'use client';
 
 import { Notebook, NotebookEntry, OutputType, Project } from '@/lib/global.types';
-import { Button, Divider, Menu, Textarea } from '@mantine/core';
+import { Button, Divider, Loader, Menu, Textarea } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { BookOpen, BookPlus, ChevronsLeft, ChevronsRight, HelpCircle, MoreHorizontal, Search, Trash } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
@@ -27,9 +27,11 @@ export default function VisualiserUI({ project, notebooks: n, preSelectedNoteboo
 {
     const router = useRouter();
     const supabase = createBrowserClient();
+    const mainBodyRef = useRef<HTMLDivElement>(null);
     const sideBarRef = useRef<HTMLDivElement>(null);
     const savedMacroRef = useRef<HTMLDivElement>(null);
 
+    const [isLoadingNotebook, setIsLoadingNotebook] = useState(!!preSelectedNotebookId && n.some(x => x.id === preSelectedNotebookId));
     const [isHovering, setIsHovering] = useState(false);
     const [isMacroHovering, setIsMacroHovering] = useState(false);
     const [userSearch, setUserSearch] = useState('');
@@ -215,7 +217,31 @@ export default function VisualiserUI({ project, notebooks: n, preSelectedNoteboo
     useEffect(() => 
     {
         if (selectedNotebookId)
+        {
             router.replace(`/app/${project.id}?notebookId=${selectedNotebookId}`, undefined);
+            supabase
+                .from('notebook_entries')
+                .select('*')
+                .eq('notebookId', selectedNotebookId)
+                .order('createdAt', { ascending: true })
+                .then(({ data, error }) => 
+                {
+                    if (error)
+                    {
+                        console.error('Error fetching notebook entries:', error.message);
+                        notifications.show({ title: 'Error', message: 'Failed to fetch notebook entries', color: 'red' });
+                        setIsLoadingNotebook(false);
+                        return;
+                    }
+
+                    setNotebookEntries(data as NotebookEntry[] || []);
+
+                    // scroll to the bottom of the notebook entries
+                    if (mainBodyRef.current)
+                        mainBodyRef.current.scrollTop = mainBodyRef.current.scrollHeight;
+                    setIsLoadingNotebook(false);
+                });
+        }
     }, [selectedNotebookId]);
 
 
@@ -325,7 +351,15 @@ export default function VisualiserUI({ project, notebooks: n, preSelectedNoteboo
                     </Menu>
                 </div>
             </nav>
-            <div className='h-full flex-grow flex flex-col max-h-[calc(100vh-60px-42px)]'>
+            <div ref={mainBodyRef} className='h-full flex-grow flex flex-col max-h-[calc(100vh-60px-42px)] relative'>
+                {
+                    isLoadingNotebook && <div className='inset-0 absolute bg-primary bg-opacity-75 backdrop-blur-sm z-50 flex flex-col gap-3 items-center justify-center'>
+                        <Loader size={64} />
+                        <h4>
+                            Loading Notebook...
+                        </h4>
+                    </div>
+                }
                 <section className='flex-grow overflow-y-auto flex flex-col gap-3 p-4 bg-[#0e0e0e]'>
                     {
                         notebookEntries.length === 0 && <div className='text-center text-neutral-500 font-medium flex-grow flex flex-col gap-3 items-center justify-center h-full'>
@@ -348,11 +382,10 @@ export default function VisualiserUI({ project, notebooks: n, preSelectedNoteboo
                         disabled={isSendingMessage}
                         value={userSearch}
                         onChange={(event) => setUserSearch(event.currentTarget.value)}
-                        placeholder='What do you want to visualise?'
+                        placeholder='What would you like to visualise?'
                         className='w-full'
                         minRows={5}
-                        maxRows={20}
-                        resize='vertical'
+                        maxRows={15}
                         autoFocus
                         onKeyDown={e => 
                         {
