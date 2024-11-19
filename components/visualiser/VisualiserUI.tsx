@@ -1,9 +1,9 @@
 'use client';
 
 import { Notebook, NotebookEntry, OutputType, Project } from '@/lib/global.types';
-import { Button, Divider, Textarea } from '@mantine/core';
+import { Button, Divider, Menu, Textarea } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { BookPlus, ChevronsLeft, ChevronsRight, Database, Search } from 'lucide-react';
+import { BookOpen, BookPlus, ChevronsLeft, ChevronsRight, HelpCircle, MoreHorizontal, Search, Trash } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { v4 } from 'uuid';
 import { createBrowserClient } from '@/utils/supabaseBrowser';
@@ -222,14 +222,14 @@ export default function VisualiserUI({ project, notebooks: n, preSelectedNoteboo
     return <div className="flex-grow flex w-full relative">
         <section
             ref={sideBarRef}
-            className={`
-                flex flex-col h-[calc(100vh-60px)] max-h-full overflow-y-auto bg-primary border-r-[1px] border-r-neutral-700 p-4 transition-all duration-300 relative
+            className={`overflow-x-hidden
+                flex flex-col h-[calc(100vh-60px)] max-h-full overflow-y-auto bg-primary border-r-[1px] border-r-neutral-700 px-4 pb-4 transition-all duration-300 relative
                 ${isHovering ? 'w-[500px] bg-opacity-75 backdrop-blur-sm' : 'w-[250px]'}`}
         >
-            <h4 className='line-clamp-2'> 
+            <h4 className='pt-2 line-clamp-2'> 
                 {project.databaseName}
             </h4>
-            <Divider className='my-4' />
+            <Divider className='mt-2 mb-4' />
             <Button fullWidth={false} variant='outline' size='xs' rightSection={<BookPlus size={20} />}>
                 Start New Notebook
             </Button>
@@ -252,7 +252,7 @@ export default function VisualiserUI({ project, notebooks: n, preSelectedNoteboo
                 }
             </button>
         </section>
-        <section className='flex-grow max-h-[calc(100vh-60px)] border-x-[1px] border-neutral-700 z-30 relative'>
+        <section className='flex-grow max-h-[calc(100vh-60px)] border-x-[1px] border-neutral-700 z-30 relative overflow-x-hidden'>
             <nav className='w-full sticky top-0 bg-primary border-b-[1px] border-neutral-700 p-2 grid grid-cols-10'>
                 <div className='col-span-2' />
                 <input
@@ -308,14 +308,34 @@ export default function VisualiserUI({ project, notebooks: n, preSelectedNoteboo
                     }}
                     type='text' placeholder='Your Notebook Name' className='col-span-6 focus:outline-none text-center bg-transparent' />
                 <div className='col-span-2 flex justify-end'>
+                    <Menu shadow='md' width={250} position={'bottom-end'}>
+                        <Menu.Target>
+                            <MoreHorizontal size={24} className='transition hover:text-green hover:cursor-pointer' />
+                        </Menu.Target>
+                        <Menu.Dropdown>
+                            <Menu.Label>
+                                Notebook Settings
+                            </Menu.Label>
+                            <Menu.Item color='red'>
+                                <div className='flex items-center gap-3 justify-between'>
+                                    <b>Delete Notebook</b> <Trash size={24} />
+                                </div>
+                            </Menu.Item>
+                        </Menu.Dropdown>
+                    </Menu>
                 </div>
             </nav>
-            <div className='h-full flex-grow flex flex-col'>
-                <section className='flex-grow h-full overflow-y-auto max-h-full flex flex-col gap-3 p-4 bg-[#0e0e0e]'>
+            <div className='h-full flex-grow flex flex-col max-h-[calc(100vh-60px-42px)]'>
+                <section className='flex-grow overflow-y-auto flex flex-col gap-3 p-4 bg-[#0e0e0e]'>
                     {
                         notebookEntries.length === 0 && <div className='text-center text-neutral-500 font-medium flex-grow flex flex-col gap-3 items-center justify-center h-full'>
-                            <Database size={64} />
+                            <BookOpen size={64} className='text-green' />
                             Start a new notebook by entering a search query below.
+                            <br />
+                            <br />
+                            <span className='max-w-xl'>
+                                Notebooks are designed to be testing grounds for creating new macros and dynamically querying <b>{project.databaseName}</b>
+                            </span>
                         </div>
                     }
                     {
@@ -351,14 +371,22 @@ export default function VisualiserUI({ project, notebooks: n, preSelectedNoteboo
         </section>
         <section
             ref={savedMacroRef}
-            className={`
-                flex flex-col h-[calc(100vh-60px)] overflow-y-auto bg-primary border-l-[1px] border-neutral-700 p-4 transition-all duration-300 z-50 relative
+            className={`overflow-x-hidden
+                flex flex-col h-[calc(100vh-60px)] overflow-y-auto bg-primary border-l-[1px] border-neutral-700 px-4 pb-4 transition-all duration-300 z-50 relative
                 ${isMacroHovering ? 'w-[500px] bg-opacity-75 backdrop-blur-sm' : 'w-[250px]'}`}
         >
-            <h4 className='line-clamp-2'> 
-                Project Macros
-            </h4>
-            <Divider className='my-4' />
+            <section className='flex gap-3 items-center justify-between pt-2'>
+                <h4 className='line-clamp-2'> 
+                    Project Macros
+                </h4>
+                <HelpCircle size={20} className='text-green hover:text-green-400 transition hover:cursor-pointer' />
+            </section>
+            <Divider className='mt-2 mb-4' />
+            {
+                <small className='text-neutral-500 font-medium text-left'>
+                    No macros exist yet. Create one by saving it from a notebook.
+                </small>
+            }
             <button className='absolute -left-3 top-[45%] z-auto p-2 w-fit rounded-full' onClick={() => setIsMacroHovering(!isMacroHovering)}>
                 {
                     isMacroHovering ? <ChevronsRight size={24} /> : <ChevronsLeft size={24} />

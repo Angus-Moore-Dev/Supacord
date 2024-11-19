@@ -10,7 +10,8 @@ const config: Config = {
         extend: {
             colors: {
                 primary: '#1a1a1a',
-                'supabase-green': 'var(--supabase-green)'
+                'supabase-green': 'var(--supabase-green)',
+                green: '#51cf66',
             },
         },
     },

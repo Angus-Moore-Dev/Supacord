@@ -1,7 +1,7 @@
 'use client';
 
 import { NotebookEntry, OutputType } from '@/lib/global.types';
-import { Divider, Button, Loader, Code, Alert } from '@mantine/core';
+import { Divider, Button, Loader, Code, Alert, Tooltip } from '@mantine/core';
 import { User2, Pencil, RotateCw, SaveAll } from 'lucide-react';
 import { BarChartVisual, PieChartVisual, LineChartVisual } from './ChartVisuals';
 import { TableVisual } from './TableVisual';
@@ -52,8 +52,8 @@ export default function NotebookEntryUI({ notebookEntry: entry }: NotebookEntryU
 
     return <div className={'bg-[#2a2a2a] p-4 px-8 rounded-md mb-2 whitespace-pre-line flex flex-col gap-3'}>
         <div className='flex gap-2 items-start'>
-            <User2 size={32} className='text-transparent fill-green-500' />
-            <h3 className='font-bold text-green-500'>
+            <User2 size={32} className='text-transparent fill-green' />
+            <h3 className='font-bold text-green'>
                 {entry.userPrompt}
             </h3>
         </div>
@@ -97,15 +97,21 @@ export default function NotebookEntryUI({ notebookEntry: entry }: NotebookEntryU
                                             SQL Query Run on Database
                                         </h4>
                                         <div className='flex gap-1'>
-                                            <Button size='xs' variant='outline'>
-                                                <Pencil size={20} />
-                                            </Button>
-                                            <Button size='xs' variant='outline'>
-                                                <RotateCw size={20} />
-                                            </Button>
-                                            <Button size='xs'>
-                                                <SaveAll size={20} />
-                                            </Button>
+                                            <Tooltip position={'bottom'} label='Edit Macro/Query/Prompt'>
+                                                <Button size='xs' variant='outline'>
+                                                    <Pencil size={20} />
+                                                </Button>
+                                            </Tooltip>
+                                            <Tooltip position={'bottom'} label='Re-run Query'>
+                                                <Button size='xs' variant='outline'>
+                                                    <RotateCw size={20} />
+                                                </Button>
+                                            </Tooltip>
+                                            <Tooltip position={'bottom'} label='Save As New Macro'>
+                                                <Button size='xs' variant='outline'>
+                                                    <SaveAll size={20} />
+                                                </Button>
+                                            </Tooltip>
                                         </div>
                                     </section>
                                     <Code lang='sql' p={'md'}>
