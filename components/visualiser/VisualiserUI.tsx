@@ -334,7 +334,7 @@ export default function VisualiserUI({ project, notebooks: n, preSelectedNoteboo
                     }}
                     type='text' placeholder='Your Notebook Name' className='col-span-6 focus:outline-none text-center bg-transparent' />
                 <div className='col-span-2 flex justify-end'>
-                    <Menu shadow='md' width={250} position={'bottom-end'}>
+                    <Menu shadow='md' width={250} position={'bottom-end'} disabled={!selectedNotebookId}>
                         <Menu.Target>
                             <MoreHorizontal size={24} className='transition hover:text-green hover:cursor-pointer' />
                         </Menu.Target>
