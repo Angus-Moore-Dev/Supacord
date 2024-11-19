@@ -86,6 +86,7 @@ export type Database = {
           industry: string | null
           lastName: string
           openAIKey: string | null
+          preferredLLMVendor: Database["public"]["Enums"]["preferredLLMVendor"]
           purposeOfUse: string | null
         }
         Insert: {
@@ -97,6 +98,7 @@ export type Database = {
           industry?: string | null
           lastName: string
           openAIKey?: string | null
+          preferredLLMVendor?: Database["public"]["Enums"]["preferredLLMVendor"]
           purposeOfUse?: string | null
         }
         Update: {
@@ -108,6 +110,7 @@ export type Database = {
           industry?: string | null
           lastName?: string
           openAIKey?: string | null
+          preferredLLMVendor?: Database["public"]["Enums"]["preferredLLMVendor"]
           purposeOfUse?: string | null
         }
         Relationships: []
@@ -291,7 +294,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      preferredLLMVendor: "OpenAI" | "Anthropic" | "Self-Hosted"
     }
     CompositeTypes: {
       [_ in never]: never

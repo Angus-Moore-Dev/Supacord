@@ -13,10 +13,25 @@ import { SpeedInsights } from '@vercel/speed-insights/next';
 const inter = Raleway({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-    title: 'Supacord | Data Visualiser',
-    description: 'A visualiser platform to help Supabase developers investigate data',
+    title: 'Supacord',
+    description: 'Empowering Supabase developers to create custom, perceptive analytics metrics, across all projects, enabled by Artificial Intelligence.',
     icons: {
         icon: '/favicon.ico'
+    },
+    openGraph: {
+        title: 'Supacord',
+        description: 'Empowering Supabase developers to create custom, perceptive analytics metrics, across all projects, enabled by Artificial Intelligence.',
+        type: 'website',
+        url: 'https://supacord.com',
+        siteName: 'Supacord',
+        images: [
+            {
+                url: '/supacord_github_banner.png',
+                width: 2500,
+                height: 1003,
+                alt: 'Empowering Supabase developers to create custom, perceptive analytics metrics, across all projects, enabled by Artificial Intelligence.'
+            }
+        ]
     }
 };
 
