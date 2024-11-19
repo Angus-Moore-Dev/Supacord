@@ -38,7 +38,7 @@ export function BarChartVisual({ content }: ChartingVisualProps): JSX.Element
     />;
 }
 
-export default function LineChartVisual({ content }: ChartingVisualProps): JSX.Element
+export function LineChartVisual({ content }: ChartingVisualProps): JSX.Element
 {
     return <AreaChart
         h={375}

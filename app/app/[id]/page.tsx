@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
 }
 
 
-export default async function VisualiserPage({ params }: { params: { id: string } })
+export default async function VisualiserPage({ params, searchParams }: { params: { id: string }, searchParams: { notebookId: string } })
 {
     const supabase = createServerClient();
     const { data: project, error } = await supabase
@@ -44,5 +44,20 @@ export default async function VisualiserPage({ params }: { params: { id: string 
         </div>;
     }
 
-    return <VisualiserUI project={project} />;
+    const { data: notebooks, error: notebookError } = await supabase
+        .from('notebooks')
+        .select('*')
+        .eq('projectId', project.id)
+        .order('createdAt', { ascending: false });
+
+    if (notebookError)
+    {
+        console.error(notebookError);
+        return <div>
+            <h1>Error</h1>
+            <p>Failed to load notebooks</p>
+        </div>;
+    }
+
+    return <VisualiserUI project={project} notebooks={notebooks} preSelectedNotebookId={searchParams.notebookId || ''} />;
 }

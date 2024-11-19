@@ -1,12 +1,14 @@
 'use client';
 
-import { OutputType, Project } from '@/lib/global.types';
-import { Button, Code, Divider, Loader, Textarea } from '@mantine/core';
+import { Notebook, NotebookEntry, OutputType, Project } from '@/lib/global.types';
+import { Button, Divider, Textarea } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { BookPlus, Database, Pencil, RotateCw, Search, User2 } from 'lucide-react';
-import { useRef, useState } from 'react';
-import { TableVisual } from './generative_ui/TableVisual';
-import LineChartVisual, { BarChartVisual, PieChartVisual } from './generative_ui/ChartVisuals';
+import { BookPlus, ChevronsLeft, ChevronsRight, Database, Search } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { v4 } from 'uuid';
+import { createBrowserClient } from '@/utils/supabaseBrowser';
+import NotebookEntryUI from './generative_ui/NotebookEntryUI';
+import { useRouter } from 'next/navigation';
 
 
 interface Section {
@@ -17,10 +19,14 @@ interface Section {
 interface VisualiserUIProps
 {
     project: Project;
+    notebooks: Notebook[];
+    preSelectedNotebookId: string;
 }
 
-export default function VisualiserUI({ project }: VisualiserUIProps)
+export default function VisualiserUI({ project, notebooks: n, preSelectedNotebookId }: VisualiserUIProps)
 {
+    const router = useRouter();
+    const supabase = createBrowserClient();
     const sideBarRef = useRef<HTMLDivElement>(null);
     const savedMacroRef = useRef<HTMLDivElement>(null);
 
@@ -28,14 +34,13 @@ export default function VisualiserUI({ project }: VisualiserUIProps)
     const [isMacroHovering, setIsMacroHovering] = useState(false);
     const [userSearch, setUserSearch] = useState('');
 
-    // TODO: rewrite this over to a notebookentry list.
-    const [messages, setMessages] = useState<{
-        type: 'ai' | 'user';
-        content: string;
-        chunks: string[]
-    }[]>([]);
+    const [notebooks, setNotebooks] = useState(n);
+    const [selectedNotebookId, setSelectedNotebookId] = useState('');
+
+    const [notebookEntries, setNotebookEntries] = useState<NotebookEntry[]>([]);
 
     const [isSendingMessage, setIsSendingMessage] = useState(false);
+
 
     async function sendMessage()
     {
@@ -44,19 +49,47 @@ export default function VisualiserUI({ project }: VisualiserUIProps)
 
         setIsSendingMessage(true);
 
-        const localMessages = messages;
-        setMessages([...localMessages, {
-            type: 'user',
-            content: userSearch,
-            chunks: []
-        }]);
-        setUserSearch('');
-        localMessages.push({
-            type: 'user',
-            content: userSearch,
-            chunks: []
+        let notebookId = selectedNotebookId;
+
+        if (!selectedNotebookId)
+        {
+            const { data: newNotebook, error } = await supabase
+                .from('notebooks')
+                .insert({
+                    id: v4(),
+                    title: 'Untitled Notebook',
+                    projectId: project.id,
+                })
+                .select('*')
+                .single();
+
+            if (error)
+            {
+                console.error('Error creating new notebook:', error.message);
+                notifications.show({ title: 'Error', message: 'Failed to create new notebook', color: 'red' });
+                setIsSendingMessage(false);
+                return;
+            }
+
+            setSelectedNotebookId(newNotebook.id);
+            notebookId = newNotebook.id;
+            setNotebooks(notebooks => [...notebooks, newNotebook]);
+        }
+
+
+        const localNotebookEntries = [...notebookEntries];
+        localNotebookEntries.push({
+            id: v4(),
+            createdAt: new Date().toISOString(),
+            notebookId,
+            userPrompt: userSearch,
+            sqlQueries: [],
+            outputs: [],
+            sha256Hash: '',
         });
 
+        setNotebookEntries(localNotebookEntries);
+        setUserSearch('');
 
         const response = await fetch(`/app/${project.id}/visualiser-search`, {
             method: 'POST',
@@ -65,8 +98,7 @@ export default function VisualiserUI({ project }: VisualiserUIProps)
             },
             body: JSON.stringify({ 
                 projectId: project.id,
-                // the last 5 messages
-                chatHistory: localMessages.slice(-5),
+                chatHistory: notebookEntries.slice(-5),
             })
         });
 
@@ -100,44 +132,46 @@ export default function VisualiserUI({ project }: VisualiserUIProps)
                 break;
             }
 
-            if (messages.length === 0)
-            {
-                const message = new TextDecoder().decode(value);
-                console.log('New message:', message);
-                localMessages.push({
-                    type: 'ai',
-                    content: message,
-                    chunks: [message]
+            const message = new TextDecoder().decode(value);
+
+            // for notebook entries, we want to get the last one and then add to the latest version output.
+            const lastEntry = localNotebookEntries[localNotebookEntries.length - 1];
+            if (lastEntry.outputs.length === 0)
+                lastEntry.outputs.push({
+                    version: 1,
+                    chunks: [],
                 });
-                setMessages(localMessages);
-                continue;
+
+            const latestOutput = lastEntry.outputs[lastEntry.outputs.length - 1];
+
+            // update the latest output with the new content
+            // latest output has a version and chunks, which contains its own stuff.
+            const section = extractSection(message);
+            if (section)
+            {
+                if (section.type === OutputType.SQL)
+                {
+                    lastEntry.sqlQueries.push(section.content);
+                }
+                else
+                {
+                    latestOutput.chunks.push({
+                        content: section?.content || message,
+                        type: section.type,
+                    });
+                }
             }
 
-            const message = new TextDecoder().decode(value);
-            if (messages[messages.length - 1].type === 'ai')
-            {
-                console.log('New message:', message);
-                localMessages[localMessages.length - 1].content += message;
-                localMessages[localMessages.length - 1].chunks.push(message);
-                setMessages(localMessages);
-            }
-            else
-            {
-                console.log('New message:', message);
-                localMessages.push({
-                    type: 'ai',
-                    content: message,
-                    chunks: [message]
-                });
-                setMessages(localMessages);
-            }
+            // update the notebook entries
+            setNotebookEntries(localNotebookEntries);
         }
 
         reader.releaseLock();
         setIsSendingMessage(false);
     }
-    
-    const extractSection = (text: string): Section | null => 
+
+
+    function extractSection(text: string): Section | null
     {
         const allTypes = Object.values(OutputType).map(type => type.toUpperCase());
         for (const type of allTypes)
@@ -168,119 +202,125 @@ export default function VisualiserUI({ project }: VisualiserUIProps)
         }
 
         return null;
-    };
+    }
+
+
+    useEffect(() => 
+    {
+        // if the URL query param has a notebookId, we want to select that notebook
+        if (preSelectedNotebookId)
+            setSelectedNotebookId(preSelectedNotebookId);
+    }, []);
+
+    useEffect(() => 
+    {
+        if (selectedNotebookId)
+            router.replace(`/app/${project.id}?notebookId=${selectedNotebookId}`, undefined);
+    }, [selectedNotebookId]);
+
 
     return <div className="flex-grow flex w-full relative">
         <section
             ref={sideBarRef}
             className={`
-                flex flex-col h-full max-h-full overflow-y-auto bg-[#0e0e0e] border-r-[1px] border-r-neutral-700 p-4 transition-all duration-300 z-50 absolute
+                flex flex-col h-[calc(100vh-60px)] max-h-full overflow-y-auto bg-primary border-r-[1px] border-r-neutral-700 p-4 transition-all duration-300 relative
                 ${isHovering ? 'w-[500px] bg-opacity-75 backdrop-blur-sm' : 'w-[250px]'}`}
-            onMouseOver={() => setIsHovering(true)}
-            onMouseLeave={() => setIsHovering(false)}
         >
             <h4 className='line-clamp-2'> 
                 {project.databaseName}
             </h4>
             <Divider className='my-4' />
-            <Button fullWidth={false} variant='outline' size='xs' rightSection={<BookPlus size={16} />}>
-                Create New Notebook
+            <Button fullWidth={false} variant='outline' size='xs' rightSection={<BookPlus size={20} />}>
+                Start New Notebook
             </Button>
             <div className='mt-3 flex flex-col gap-1'>
-                <h4 className='line-clamp-1'>
-                    Notebooks go here
-                </h4>
+                {
+                    notebooks.length === 0 && <p className='text-neutral-500 font-medium text-center'>
+                        No notebooks exist yet.
+                    </p>
+                }
+                {
+                    notebooks.map((notebook, index) => <Button variant={selectedNotebookId === notebook.id ? 'filled' : 'subtle'} key={index} fullWidth onClick={() => setSelectedNotebookId(notebook.id)}>
+                        {notebook.title}
+                    </Button>)
+                }
             </div>
+            {/* Make a button that goes halfway down and sits on the right border with chevrons to expand or close */}
+            <button className='absolute -right-3 top-[45%] z-auto p-2 w-fit rounded-full' onClick={() => setIsHovering(!isHovering)}>
+                {
+                    isHovering ? <ChevronsLeft size={24} /> : <ChevronsRight size={24} />
+                }
+            </button>
         </section>
-        <section className='flex-grow max-w-[calc(100vw-500px)] max-h-[calc(100vh-60px)] ml-[250px] border-x-[1px] border-neutral-700'>
-            <div className='h-full flex-grow flex flex-col'>
-                <section className='flex-grow h-full overflow-y-auto max-h-full flex flex-col gap-3 p-4'>
+        <section className='flex-grow max-h-[calc(100vh-60px)] border-x-[1px] border-neutral-700 z-30 relative'>
+            <nav className='w-full sticky top-0 bg-primary border-b-[1px] border-neutral-700 p-2 grid grid-cols-10'>
+                <div className='col-span-2' />
+                <input
+                    disabled={isSendingMessage || !selectedNotebookId}
+                    value={notebooks.find(x => x.id === selectedNotebookId)?.title !== undefined ? notebooks.find(x => x.id === selectedNotebookId)?.title : 'Untitled Notebook'}
+                    onChange={e => 
                     {
-                        messages.length === 0 && <div className='text-center text-neutral-500 font-medium flex-grow flex flex-col gap-3 items-center justify-center h-full'>
+                        const newTitle = e.currentTarget.value;
+                        setNotebooks(notebooks => notebooks.map(notebook => 
+                        {
+                            if (notebook.id === selectedNotebookId)
+                                return { ...notebook, title: newTitle };
+                            return notebook;
+                        }));
+                    }}
+                    onBlur={async () => 
+                    {
+                        const notebook = notebooks.find(x => x.id === selectedNotebookId);
+                        if (!notebook)
+                            return;
+
+                        const { error } = await supabase
+                            .from('notebooks')
+                            .update({ title: notebook.title })
+                            .eq('id', selectedNotebookId);
+
+                        if (error)
+                        {
+                            console.error('Error updating notebook:', error.message);
+                            notifications.show({ title: 'Error', message: 'Failed to update notebook', color: 'red' });
+                        }
+                    }}
+                    onKeyDown={async e => 
+                    {
+                        if (e.key === 'Enter')
+                        {
+                            e.preventDefault();
+                            const notebook = notebooks.find(x => x.id === selectedNotebookId);
+                            if (!notebook)
+                                return;
+
+                            const { error } = await supabase
+                                .from('notebooks')
+                                .update({ title: notebook.title })
+                                .eq('id', selectedNotebookId);
+
+                            if (error)
+                            {
+                                console.error('Error updating notebook:', error.message);
+                                notifications.show({ title: 'Error', message: 'Failed to update notebook', color: 'red' });
+                            }
+                        }
+                    }}
+                    type='text' placeholder='Your Notebook Name' className='col-span-6 focus:outline-none text-center bg-transparent' />
+                <div className='col-span-2 flex justify-end'>
+                </div>
+            </nav>
+            <div className='h-full flex-grow flex flex-col'>
+                <section className='flex-grow h-full overflow-y-auto max-h-full flex flex-col gap-3 p-4 bg-[#0e0e0e]'>
+                    {
+                        notebookEntries.length === 0 && <div className='text-center text-neutral-500 font-medium flex-grow flex flex-col gap-3 items-center justify-center h-full'>
                             <Database size={64} />
                             Start a new notebook by entering a search query below.
                         </div>
                     }
                     {
-                        messages.map((message, index) => <div key={index} className={'bg-[#2a2a2a] p-4 px-8 rounded-md mb-2 whitespace-pre-line flex flex-col gap-3'}>
-                            {
-                                message.type === 'user' &&
-                                        <div className='flex gap-2 items-start'>
-                                            <User2 size={32} className='text-transparent fill-green-500' />
-                                            <h3 className='font-bold text-green-500'>
-                                                {message.content}
-                                            </h3>
-                                        </div>
-                            }
-                            <Divider />
-                            {
-                                // if the latest message is a user, we temporarily mimic a fake message with just a loader
-                                messages.length > 0 && messages[messages.length - 1].type === 'user' &&
-                                        <div className='bg-[#2a2a2a] p-4 px-8 rounded-md mb-2 whitespace-pre-line flex flex-col gap-3'>
-                                            <Loader size={32} />
-                                            <h4>
-                                                Loading response...
-                                            </h4>
-                                        </div>
-                            }
-                            {
-                                message.type === 'user' && messages[index + 1] && messages[index + 1].type === 'ai' &&
-                                        messages[index + 1].chunks.map((chunk, index) => 
-                                        {
-                                            const section = extractSection(chunk);
-                                            if (!section)
-                                                return <p key={index} className='text-neutral-500 font-medium'>
-                                                    {chunk}
-                                                </p>;
-
-                                            switch (section.type.toLowerCase())
-                                            {
-                                            case OutputType.SQL:
-                                                return <div key={index} className='flex flex-col gap-1'>
-                                                    <section className='flex items-end justify-between'>
-                                                        <h4 className='text-neutral-500 font-medium'>
-                                                            SQL Query Run on Database
-                                                        </h4>
-                                                        <div className='flex'>
-                                                            <Button size='xs' variant='outline'>
-                                                                <Pencil size={16} />
-                                                            </Button>
-                                                            <Button size='xs' variant='outline'>
-                                                                <RotateCw size={16} />
-                                                            </Button>
-                                                        </div>
-                                                    </section>
-                                                    <Code lang='sql' p={'md'}>
-                                                        {section.content}
-                                                    </Code>
-                                                </div>;
-                                            case OutputType.Text:
-                                                return <p key={index} className='font-medium whitespace-pre-wrap'>
-                                                    {section.content}
-                                                </p>;
-                                            case OutputType.Table:
-                                                return <TableVisual key={index} data={JSON.parse(section.content)} />;
-                                            case OutputType.BarChart:
-                                                return <BarChartVisual
-                                                    key={index}
-                                                    content={JSON.parse(section.content)}
-                                                />;
-                                            case OutputType.LineChart:
-                                                return <LineChartVisual
-                                                    key={index}
-                                                    content={JSON.parse(section.content)}
-                                                />;
-                                            case OutputType.PieChart:
-                                                return <PieChartVisual
-                                                    key={index}
-                                                    content={JSON.parse(section.content)}
-                                                />;
-                                            default:
-                                                return `TO BE ADDED: ${section.type}`;
-                                            }
-                                        })
-                            }
-                        </div>)
+                        notebookEntries.length > 0 &&
+                        notebookEntries.map((entry, index) => <NotebookEntryUI key={index} notebookEntry={entry} />)
                     }
                 </section>
                 <div className='flex flex-row gap-3 bg-[#0e0e0e] p-2 sticky bottom-0'>
@@ -293,6 +333,7 @@ export default function VisualiserUI({ project }: VisualiserUIProps)
                         minRows={5}
                         maxRows={20}
                         resize='vertical'
+                        autoFocus
                         onKeyDown={e => 
                         {
                             if (e.key === 'Enter' && !e.shiftKey)
@@ -311,16 +352,18 @@ export default function VisualiserUI({ project }: VisualiserUIProps)
         <section
             ref={savedMacroRef}
             className={`
-                flex flex-col h-full max-h-full overflow-y-auto bg-[#0e0e0e] border-l-[1px] border-neutral-700 p-4 py-8 transition-all duration-300 z-50 absolute right-0
+                flex flex-col h-[calc(100vh-60px)] overflow-y-auto bg-primary border-l-[1px] border-neutral-700 p-4 transition-all duration-300 z-50 relative
                 ${isMacroHovering ? 'w-[500px] bg-opacity-75 backdrop-blur-sm' : 'w-[250px]'}`}
-            onMouseOver={() => setIsMacroHovering(true)}
-            onMouseLeave={() => setIsMacroHovering(false)}
         >
-            <div className='mt-3 flex flex-col gap-1'>
-                <h4 className='line-clamp-1'>
-                    Saved Macros go here
-                </h4>
-            </div>
+            <h4 className='line-clamp-2'> 
+                Project Macros
+            </h4>
+            <Divider className='my-4' />
+            <button className='absolute -left-3 top-[45%] z-auto p-2 w-fit rounded-full' onClick={() => setIsMacroHovering(!isMacroHovering)}>
+                {
+                    isMacroHovering ? <ChevronsRight size={24} /> : <ChevronsLeft size={24} />
+                }
+            </button>
         </section>
     </div>;
 }

@@ -13,27 +13,27 @@ export type Database = {
         Row: {
           createdAt: string
           id: string
-          messageText: string
           notebookId: string
           outputs: Json[]
+          sha256Hash: string
           sqlQueries: string[]
           userPrompt: string
         }
         Insert: {
           createdAt?: string
           id?: string
-          messageText: string
           notebookId: string
           outputs: Json[]
+          sha256Hash: string
           sqlQueries: string[]
           userPrompt: string
         }
         Update: {
           createdAt?: string
           id?: string
-          messageText?: string
           notebookId?: string
           outputs?: Json[]
+          sha256Hash?: string
           sqlQueries?: string[]
           userPrompt?: string
         }

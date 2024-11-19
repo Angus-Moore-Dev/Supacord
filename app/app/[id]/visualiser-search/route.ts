@@ -3,6 +3,7 @@ import { createServerClient } from '@/utils/supabaseServer';
 import { NextRequest, NextResponse } from 'next/server';
 import { isSupabaseError, SupabaseManagementAPI } from 'supabase-management-js';
 import OpenAI from 'openai';
+import { NotebookEntry } from '@/lib/global.types';
 
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
@@ -22,10 +23,7 @@ export async function POST(request: NextRequest)
         chatHistory
     } = await request.json() as {
         projectId: string;
-        chatHistory: {
-            type: 'ai' | 'user';
-            content: string;
-        }[];
+        chatHistory: NotebookEntry[];
     };
 
     const { data: project } = await supabase
@@ -122,6 +120,21 @@ export async function POST(request: NextRequest)
             - Your queries will be used directly to interact with the database, so ensure they are free from syntax errors and logically correct.
             - Identify and utilize columns that could be used as enums (e.g., status types, categories) for more efficient querying.
             - For aggregate queries, use appropriate SQL functions that don't require GROUP BY clauses when possible.
+            - When referencing columns that have an assigned alias, use the alias in subsequent queries, not the original column name. This prevents GROUP BY errors as seen above.
+            - This is a Supabase project, so by default the schema is public. Unless explicitly stated, assume that all tables are in the public schema.
+            - DO NOT WRITE SQL QUERIES THAT INDUCE A GROUP BY ERROR. For instance, here is an example of a query that would induce this error:
+
+            SELECT "public"."postLikes"."id" AS "public.postLikes.id", "public"."postLikes"."postId", COUNT("public"."postLikes"."id") AS "like_count"
+            FROM "public"."postLikes"
+            GROUP BY "public"."postLikes"."postId"
+            ORDER BY "like_count" DESC
+            LIMIT 10;
+
+            Here is the error:
+            Failed to run query: Bad Request (400): Failed to run sql query: ERROR: 42803: column "postLikes.id" must appear in the GROUP BY clause or be used in an aggregate function
+            LINE 6: SELECT "public"."postLikes"."id" AS "public.postLikes.id", "public"."postLikes"."postId", COUNT("public"."postLikes"."id") AS "like_count"
+
+            - To avoid this error, you should use the alias "like_count" in the ORDER BY clause instead of the original column name.
 
             2. User-Database Interface:
             - Act as a translator between natural language user inputs and SQL queries.
@@ -229,8 +242,8 @@ export async function POST(request: NextRequest)
             `
         },
         ...chatHistory.map(message => ({
-            role: message.type === 'user' ? 'user' : 'assistant',
-            content: `Please generate an SQL query for postgresql based on the following user input: ${message.content}`
+            role: 'user',
+            content: `Please generate an SQL query for postgresql based on the following user input: ${message.userPrompt}`
         }))
     ];
 
@@ -258,15 +271,15 @@ export async function POST(request: NextRequest)
                         primaryKey,
                         chartDetails,
                     } = JSON.parse(toolCalls[0].function.arguments) as { 
-                    type: string[],
-                    chainedQueries: { sqlQuery: string, type: string[], queryExplanation: string }[],
-                    primaryKey: string[],
-                    chartDetails: {
-                        xLabel: string;
-                        yLabel: string;
-                        title: string;
-                    }
-                };
+                        type: string[],
+                        chainedQueries: { sqlQuery: string, type: string[], queryExplanation: string }[],
+                        primaryKey: string[],
+                        chartDetails: {
+                            xLabel: string;
+                            yLabel: string;
+                            title: string;
+                        }
+                    };
 
                     console.log('Type:', type);
                     console.log('Chained Queries:', chainedQueries);

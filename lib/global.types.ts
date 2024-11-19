@@ -64,6 +64,7 @@ export type PrimaryKeyEntities = { primaryKey: string, ids: string[] };
 
 export enum OutputType
 {
+    Error = 'error',
     Text = 'text',
     SQL = 'sql query',
     Table = 'table',
@@ -77,14 +78,9 @@ export enum OutputType
 export type SearchStreamOutput = {
     content: string; // unformatted content
     type: OutputType;
-    chartDetails: {
-        xLabel: string;
-        yLabel: string;
-        title: string;
-    } | undefined;
 }
 
 export type NotebookEntryOutput = {
     version: number;
-    results: string[]; // could be multiple types, also stored unformatted as the stream outputs it.
+    chunks: SearchStreamOutput[];
 }

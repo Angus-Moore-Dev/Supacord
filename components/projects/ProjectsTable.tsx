@@ -51,7 +51,7 @@ export default function ProjectsTable({ projects }: ProjectsTableProps)
                     </Table.Td>
                     <Table.Td align='right' className='flex gap-3 justify-end'>
                         <Link href={`https://supabase.com/dashboard/project/${project.projectId}`} target='_blank'>
-                            <Button size='xs' rightSection={<ExternalLink size={16} />} variant='outline'>
+                            <Button size='xs' rightSection={<ExternalLink size={20} />} variant='outline'>
                                 View On Supabase
                             </Button>
                         </Link>
@@ -60,7 +60,7 @@ export default function ProjectsTable({ projects }: ProjectsTableProps)
                                 Go To Project &rarr;
                             </Button>
                         </Link>
-                        <Button size='xs' color='red' rightSection={<Trash size={16} />}>
+                        <Button size='xs' color='red' rightSection={<Trash size={20} />}>
                             Delete
                         </Button>
                     </Table.Td>
