@@ -62,6 +62,5 @@ export default async function ProjectsPage()
                 </Card>)
             }
         </div>
-        {/* <ProjectsTable projects={data} /> */}
     </div>;
 }
