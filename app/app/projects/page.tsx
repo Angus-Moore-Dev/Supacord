@@ -19,7 +19,7 @@ export default async function ProjectsPage()
             projectId, 
             createdAt,
             notebooks(id, projectId),
-            saved_user_macros(id, projectId)
+            user_macros(id, projectId)
         `)
         .order('createdAt', { ascending: true });
 
@@ -53,7 +53,7 @@ export default async function ProjectsPage()
                         </Link>
                     </section>
                     <small className='text-neutral-500 font-medium'>
-                        <b>{project.projectId}</b> | {project.notebooks.length} Notebooks | {project.saved_user_macros.length} Macros
+                        <b>{project.projectId}</b> | {project.notebooks.length} Notebook{project.notebooks.length !== 1 && 's'} | {project.user_macros.length} Macros
                     </small>
                     <section className='flex gap-3'>
                         <Link href={`/app/${project.id}`}>

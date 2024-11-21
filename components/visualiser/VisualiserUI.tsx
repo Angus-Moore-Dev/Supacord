@@ -1,7 +1,7 @@
 'use client';
 
 import { Notebook, NotebookEntry, OutputType, Project } from '@/lib/global.types';
-import { Button, Divider, Loader, Menu, Textarea } from '@mantine/core';
+import { Button, Divider, Menu, Textarea } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { BookOpen, BookPlus, ChevronsLeft, ChevronsRight, HelpCircle, MoreHorizontal, Search, Trash } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
@@ -9,6 +9,7 @@ import { v4 } from 'uuid';
 import { createBrowserClient } from '@/utils/supabaseBrowser';
 import NotebookEntryUI from './generative_ui/NotebookEntryUI';
 import { useRouter } from 'next/navigation';
+import LogoLoader from '../LogoLoader';
 
 
 interface Section {
@@ -21,9 +22,15 @@ interface VisualiserUIProps
     project: Project;
     notebooks: Notebook[];
     preSelectedNotebookId: string;
+    preSelectedNotebookEntries: NotebookEntry[];
 }
 
-export default function VisualiserUI({ project, notebooks: n, preSelectedNotebookId }: VisualiserUIProps)
+export default function VisualiserUI({ 
+    project, 
+    notebooks: n, 
+    preSelectedNotebookId,
+    preSelectedNotebookEntries,
+}: VisualiserUIProps)
 {
     const router = useRouter();
     const supabase = createBrowserClient();
@@ -39,7 +46,7 @@ export default function VisualiserUI({ project, notebooks: n, preSelectedNoteboo
     const [notebooks, setNotebooks] = useState(n);
     const [selectedNotebookId, setSelectedNotebookId] = useState('');
 
-    const [notebookEntries, setNotebookEntries] = useState<NotebookEntry[]>([]);
+    const [notebookEntries, setNotebookEntries] = useState<NotebookEntry[]>(preSelectedNotebookEntries);
 
     const [isSendingMessage, setIsSendingMessage] = useState(false);
 
@@ -80,15 +87,25 @@ export default function VisualiserUI({ project, notebooks: n, preSelectedNoteboo
 
 
         const localNotebookEntries = [...notebookEntries];
-        localNotebookEntries.push({
+        const newNotebookEntry: NotebookEntry = {
             id: v4(),
             createdAt: new Date().toISOString(),
             notebookId,
             userPrompt: userSearch,
             sqlQueries: [],
             outputs: [],
-            sha256Hash: '',
-        });
+            attachedMacroId: null
+        };
+        localNotebookEntries.push(newNotebookEntry);
+
+        const { error } = await supabase.from('notebook_entries').insert(newNotebookEntry);
+        if (error)
+        {
+            console.error('Error creating new notebook entry:', error.message);
+            notifications.show({ title: 'Error', message: 'Failed to create new notebook entry', color: 'red' });
+            setIsSendingMessage(false);
+            return;
+        }
 
         setNotebookEntries(localNotebookEntries);
         setUserSearch('');
@@ -100,7 +117,10 @@ export default function VisualiserUI({ project, notebooks: n, preSelectedNoteboo
             },
             body: JSON.stringify({ 
                 projectId: project.id,
-                chatHistory: notebookEntries.slice(-5),
+                chatHistory: localNotebookEntries.slice(-5),
+                notebookId: notebookId,
+                notebookEntryId: newNotebookEntry.id,
+                version: 1,
             })
         });
 
@@ -198,7 +218,7 @@ export default function VisualiserUI({ project, notebooks: n, preSelectedNoteboo
             
             console.log('Extracted:', type);
             return {
-                type: type as OutputType,
+                type: type.toLowerCase() as OutputType,
                 content: text.substring(contentStartIndex, endIndex).trim()
             };
         }
@@ -210,14 +230,17 @@ export default function VisualiserUI({ project, notebooks: n, preSelectedNoteboo
     useEffect(() => 
     {
         // if the URL query param has a notebookId, we want to select that notebook
-        if (preSelectedNotebookId)
+        if (preSelectedNotebookId && n.some(x => x.id === preSelectedNotebookId))
             setSelectedNotebookId(preSelectedNotebookId);
+        else
+            router.replace(`/app/${project.id}`, undefined);
     }, []);
 
     useEffect(() => 
     {
         if (selectedNotebookId)
         {
+            setIsLoadingNotebook(true);
             router.replace(`/app/${project.id}?notebookId=${selectedNotebookId}`, undefined);
             supabase
                 .from('notebook_entries')
@@ -248,7 +271,7 @@ export default function VisualiserUI({ project, notebooks: n, preSelectedNoteboo
     return <div className="flex-grow flex w-full relative">
         <section
             ref={sideBarRef}
-            className={`overflow-x-hidden
+            className={`overflow-x-hidden min-w-[250px]
                 flex flex-col h-[calc(100vh-60px)] max-h-full overflow-y-auto bg-primary border-r-[1px] border-r-neutral-700 px-4 pb-4 transition-all duration-300 relative
                 ${isHovering ? 'w-[500px] bg-opacity-75 backdrop-blur-sm' : 'w-[250px]'}`}
         >
@@ -256,14 +279,19 @@ export default function VisualiserUI({ project, notebooks: n, preSelectedNoteboo
                 {project.databaseName}
             </h4>
             <Divider className='mt-2 mb-4' />
-            <Button fullWidth={false} variant='outline' size='xs' rightSection={<BookPlus size={20} />}>
+            <Button fullWidth={false} variant='outline' size='xs' rightSection={<BookPlus size={20} />} onClick={() => 
+            {
+                setSelectedNotebookId('');
+                setNotebookEntries([]);
+            }}>
                 Start New Notebook
             </Button>
             <div className='mt-3 flex flex-col gap-1'>
                 {
-                    notebooks.length === 0 && <p className='text-neutral-500 font-medium text-center'>
+                    notebooks.length === 0 &&
+                    <small className='text-neutral-500 font-medium text-center'>
                         No notebooks exist yet.
-                    </p>
+                    </small>
                 }
                 {
                     notebooks.map((notebook, index) => <Button variant={selectedNotebookId === notebook.id ? 'filled' : 'subtle'} key={index} fullWidth onClick={() => setSelectedNotebookId(notebook.id)}>
@@ -283,7 +311,7 @@ export default function VisualiserUI({ project, notebooks: n, preSelectedNoteboo
                 <div className='col-span-2' />
                 <input
                     disabled={isSendingMessage || !selectedNotebookId}
-                    value={notebooks.find(x => x.id === selectedNotebookId)?.title !== undefined ? notebooks.find(x => x.id === selectedNotebookId)?.title : 'Untitled Notebook'}
+                    value={notebooks.find(x => x.id === selectedNotebookId)?.title !== undefined ? notebooks.find(x => x.id === selectedNotebookId)?.title : 'New Notebook'}
                     onChange={e => 
                     {
                         const newTitle = e.currentTarget.value;
@@ -332,7 +360,7 @@ export default function VisualiserUI({ project, notebooks: n, preSelectedNoteboo
                             }
                         }
                     }}
-                    type='text' placeholder='Your Notebook Name' className='col-span-6 focus:outline-none text-center bg-transparent' />
+                    type='text' placeholder='Your Notebook Name' className='col-span-6 focus:outline-none text-center bg-transparent font-medium' />
                 <div className='col-span-2 flex justify-end'>
                     <Menu shadow='md' width={250} position={'bottom-end'} disabled={!selectedNotebookId}>
                         <Menu.Target>
@@ -342,7 +370,28 @@ export default function VisualiserUI({ project, notebooks: n, preSelectedNoteboo
                             <Menu.Label>
                                 Notebook Settings
                             </Menu.Label>
-                            <Menu.Item color='red'>
+                            <Menu.Item color='red' onClick={async () => 
+                            {
+                                if (confirm('Are you sure you want to delete this notebook?'))
+                                {
+                                    const { error } = await supabase
+                                        .from('notebooks')
+                                        .delete()
+                                        .eq('id', selectedNotebookId);
+
+                                    if (error)
+                                    {
+                                        console.error('Error deleting notebook:', error.message);
+                                        notifications.show({ title: 'Error', message: 'Failed to delete notebook', color: 'red' });
+                                    }
+                                    else
+                                    {
+                                        setNotebooks(notebooks => notebooks.filter(x => x.id !== selectedNotebookId));
+                                        setSelectedNotebookId('');
+                                        setNotebookEntries([]);
+                                    }
+                                }
+                            }}>
                                 <div className='flex items-center gap-3 justify-between'>
                                     <b>Delete Notebook</b> <Trash size={24} />
                                 </div>
@@ -354,7 +403,7 @@ export default function VisualiserUI({ project, notebooks: n, preSelectedNoteboo
             <div ref={mainBodyRef} className='h-full flex-grow flex flex-col max-h-[calc(100vh-60px-42px)] relative'>
                 {
                     isLoadingNotebook && <div className='inset-0 absolute bg-primary bg-opacity-75 backdrop-blur-sm z-50 flex flex-col gap-3 items-center justify-center'>
-                        <Loader size={64} />
+                        <LogoLoader />
                         <h4>
                             Loading Notebook...
                         </h4>
@@ -374,7 +423,7 @@ export default function VisualiserUI({ project, notebooks: n, preSelectedNoteboo
                     }
                     {
                         notebookEntries.length > 0 &&
-                        notebookEntries.map((entry, index) => <NotebookEntryUI key={index} notebookEntry={entry} />)
+                        notebookEntries.map((entry, index) => <NotebookEntryUI key={index} project={project} notebookEntry={entry} />)
                     }
                 </section>
                 <div className='flex flex-row gap-3 bg-[#0e0e0e] p-2 sticky bottom-0'>
@@ -404,7 +453,7 @@ export default function VisualiserUI({ project, notebooks: n, preSelectedNoteboo
         </section>
         <section
             ref={savedMacroRef}
-            className={`overflow-x-hidden
+            className={`overflow-x-hidden min-w-[250px]
                 flex flex-col h-[calc(100vh-60px)] overflow-y-auto bg-primary border-l-[1px] border-neutral-700 px-4 pb-4 transition-all duration-300 z-50 relative
                 ${isMacroHovering ? 'w-[500px] bg-opacity-75 backdrop-blur-sm' : 'w-[250px]'}`}
         >
@@ -416,7 +465,7 @@ export default function VisualiserUI({ project, notebooks: n, preSelectedNoteboo
             </section>
             <Divider className='mt-2 mb-4' />
             {
-                <small className='text-neutral-500 font-medium text-left'>
+                <small className='text-neutral-500 font-medium text-center'>
                     No macros exist yet. Create one by saving it from a notebook.
                 </small>
             }

@@ -3,7 +3,7 @@ import { createServerClient } from '@/utils/supabaseServer';
 import { NextRequest, NextResponse } from 'next/server';
 import { isSupabaseError, SupabaseManagementAPI } from 'supabase-management-js';
 import OpenAI from 'openai';
-import { NotebookEntry } from '@/lib/global.types';
+import { NotebookEntry, NotebookEntryOutput, OutputType } from '@/lib/global.types';
 
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
@@ -20,11 +20,20 @@ export async function POST(request: NextRequest)
 
     const { 
         projectId,
-        chatHistory
+        chatHistory,
+        notebookId,
+        notebookEntryId,
+        version
     } = await request.json() as {
         projectId: string;
         chatHistory: NotebookEntry[];
+        notebookId: string;
+        notebookEntryId: string;
+        version: number;
     };
+
+    if (!projectId || chatHistory === undefined || !notebookId || !notebookEntryId || version === undefined)
+        return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
 
     const { data: project } = await supabase
         .from('projects')
@@ -34,6 +43,7 @@ export async function POST(request: NextRequest)
 
     if (!project) 
     {
+        console.log('Project not found with id::', projectId);
         return new Response(JSON.stringify({ error: 'Project not found' }), { status: 404 });
     }
 
@@ -54,6 +64,8 @@ export async function POST(request: NextRequest)
     {
         return new Response(JSON.stringify({ error: 'No access token found for project' }), { status: 404 });
     }
+
+    console.log(chatHistory.map(x => x.userPrompt));
 
     const managementSupabase = new SupabaseManagementAPI({ accessToken: token.accessToken });
     // Fetch the database schema
@@ -85,7 +97,7 @@ export async function POST(request: NextRequest)
                                 title: { type: 'string' },
                             }
                         },
-                        chainedQueries: {
+                        queries: {
                             type: 'array',
                             items: {
                                 type: 'object',
@@ -95,7 +107,7 @@ export async function POST(request: NextRequest)
                                     queryExplanation: { type: 'string' }
                                 }
                             },
-                            description: 'An array of related queries that should be executed in sequence'
+                            description: 'An array of SQL queries that are generated based on the user question or prompt'
                         },
                         primaryKey: {
                             type: 'array',
@@ -103,7 +115,7 @@ export async function POST(request: NextRequest)
                             items: { type: 'string' }
                         }
                     },
-                    required: ['chainedQueries', 'type', 'queryExplanation', 'primaryKey']
+                    required: ['queries', 'type', 'queryExplanation', 'primaryKey']
                 }
             }
         }
@@ -146,7 +158,6 @@ export async function POST(request: NextRequest)
             - Ensure each query is independently executable.
             - If a task requires multiple dependent operations, combine them into a single query using subqueries or CTEs.
             - Separate independent operations into distinct queries.
-            - Any foreign key or primary key relationship must be defined as "schema.table.column", e.g. "public"."reviews"."profileId" => "public"."profiles"."id" or "public"."investments"."createdBy" => "public"."profiles"."id".
             This is necessary for the graph visualisation tool to understand the relationships between nodes.
 
             4. Data Visualization Requirements:
@@ -184,9 +195,6 @@ export async function POST(request: NextRequest)
 
             Remember, your output will be directly used to query the database. Therefore, you must only generate valid SQL statements that adhere to PostgreSQL syntax. Your role is critical in bridging the gap between user intent and database interaction, so strive for accuracy, efficiency, and clarity in all your responses.
             Wrap all columns and tables in double quotes in case of camelCase or special characters used in the column or table names.
-
-            When returning a row from a table, ensure that the primary key comes first and is labelled as "schema.table_name.key". We need this for additional functionality for data visualisation (so we can recognise
-            what nodes are being referred to in the graph). For instance, "profiles.id" would be "public"."profiles"."id", or "investments.investmentNumberId" would be "public"."investments"."investmentNumberId".
 
             The structure of the schema is as follows:
             {
@@ -241,10 +249,31 @@ export async function POST(request: NextRequest)
             \`\`\`
             `
         },
-        ...chatHistory.map(message => ({
-            role: 'user',
-            content: `Please generate an SQL query for postgresql based on the following user input: ${message.userPrompt}`
-        }))
+        // group the chat history so user is prompt and the assistant is the SQL query response
+        ...chatHistory.reduce<{ role: string; content: string; }[]>((acc, message) => 
+        {
+            const lastMessage = acc[acc.length - 1];
+            if (lastMessage && lastMessage.role === 'user') 
+            {
+                return [
+                    ...acc,
+                    {
+                        role: 'assistant',
+                        content: message.sqlQueries.join('\n')
+                    }
+                ];
+            }
+            else 
+            {
+                return [
+                    ...acc,
+                    {
+                        role: 'user',
+                        content: message.userPrompt
+                    }
+                ];
+            }
+        }, [])
     ];
 
     const streamingResponse = new ReadableStream({
@@ -261,18 +290,17 @@ export async function POST(request: NextRequest)
                     temperature: 0.3
                 });
 
-
                 const toolCalls = response.choices[0].message.tool_calls;
                 if (toolCalls && toolCalls.length > 0)
                 {
                     const { 
                         type,
-                        chainedQueries,
+                        queries,
                         primaryKey,
                         chartDetails,
                     } = JSON.parse(toolCalls[0].function.arguments) as { 
                         type: string[],
-                        chainedQueries: { sqlQuery: string, type: string[], queryExplanation: string }[],
+                        queries: { sqlQuery: string, type: string[], queryExplanation: string }[],
                         primaryKey: string[],
                         chartDetails: {
                             xLabel: string;
@@ -282,15 +310,27 @@ export async function POST(request: NextRequest)
                     };
 
                     console.log('Type:', type);
-                    console.log('Chained Queries:', chainedQueries);
+                    console.log('Chained Queries:', queries);
                     console.log('Primary Key:', primaryKey);
                     console.log('Chart Details:', chartDetails);
 
-                    for (const chainedQuery of chainedQueries)
+                    // we need to store the SQL queries in case of editing later on.
+                    const { error } = await supabase
+                        .from('notebook_entries')
+                        .update({ sqlQueries: queries.map(query => query.sqlQuery) })
+                        .eq('id', notebookEntryId);
+
+                    if (error)
+                    {
+                        console.error(error);
+                        controller.enqueue('\n=====ERROR=====\nAn error occurred while saving the SQL queries\n=====END ERROR=====\n');
+                    }
+
+                    for (const chainedQuery of queries)
                     {
                         controller.enqueue(`\n\n=====SQL QUERY=====\n${chainedQuery.sqlQuery}\n=====END SQL QUERY=====\n`);
                         await new Promise(resolve => setTimeout(resolve, 500));
-                    
+
                         try
                         {
                             const result = await managementSupabase.runQuery(
@@ -327,6 +367,50 @@ export async function POST(request: NextRequest)
                                     controller.enqueue(`\n=====${type.toUpperCase()}=====\n${JSON.stringify(result)}\n=====END ${type.toUpperCase()}=====\n`);
                                     await new Promise(resolve => setTimeout(resolve, 250));
                                 }
+                            }
+
+                            // now we want to store these outputs in the database
+                            // Outputs are used to display the results of the queries in the UI
+                            const outputs: NotebookEntryOutput[] = [];
+
+                            for (const type of chainedQuery.type)
+                            {
+                                if (type.includes('chart'))
+                                {
+                                    outputs.push({
+                                        version: 1,
+                                        chunks: [{
+                                            type: Object.values(OutputType).find(value => value === type) as OutputType,
+                                            content: JSON.stringify({
+                                                xLabel: chartDetails.xLabel,
+                                                yLabel: chartDetails.yLabel,
+                                                title: chartDetails.title,
+                                                data: result
+                                            })
+                                        }]
+                                    });
+                                }
+                                else
+                                {
+                                    outputs.push({
+                                        version: 1,
+                                        chunks: [{
+                                            type: Object.values(OutputType).find(value => value === type) as OutputType,
+                                            content: JSON.stringify(result)
+                                        }]
+                                    });
+                                }
+                            }
+
+                            const { error } = await supabase
+                                .from('notebook_entries')
+                                .update({ outputs })
+                                .eq('id', notebookEntryId);
+
+                            if (error)
+                            {
+                                console.error(error);
+                                controller.enqueue('\n=====ERROR=====\nAn error occurred while saving the outputs\n=====END ERROR=====\n');
                             }
                         }
                         catch (error)

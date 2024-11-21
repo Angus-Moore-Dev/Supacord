@@ -11,29 +11,29 @@ export type Database = {
     Tables: {
       notebook_entries: {
         Row: {
+          attachedMacroId: string | null
           createdAt: string
           id: string
           notebookId: string
           outputs: Json[]
-          sha256Hash: string
           sqlQueries: string[]
           userPrompt: string
         }
         Insert: {
+          attachedMacroId?: string | null
           createdAt?: string
           id?: string
           notebookId: string
           outputs: Json[]
-          sha256Hash: string
           sqlQueries: string[]
           userPrompt: string
         }
         Update: {
+          attachedMacroId?: string | null
           createdAt?: string
           id?: string
           notebookId?: string
           outputs?: Json[]
-          sha256Hash?: string
           sqlQueries?: string[]
           userPrompt?: string
         }
@@ -43,6 +43,13 @@ export type Database = {
             columns: ["notebookId"]
             isOneToOne: false
             referencedRelation: "notebooks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notebook_entries_attachedMacroId_fkey"
+            columns: ["attachedMacroId"]
+            isOneToOne: false
+            referencedRelation: "user_macros"
             referencedColumns: ["id"]
           },
         ]
@@ -153,48 +160,6 @@ export type Database = {
           },
         ]
       }
-      saved_user_macros: {
-        Row: {
-          createdAt: string
-          id: string
-          macroTextPrompt: string
-          profileId: string
-          projectId: string
-          storedSQLQuery: string | null
-        }
-        Insert: {
-          createdAt?: string
-          id?: string
-          macroTextPrompt: string
-          profileId: string
-          projectId: string
-          storedSQLQuery?: string | null
-        }
-        Update: {
-          createdAt?: string
-          id?: string
-          macroTextPrompt?: string
-          profileId?: string
-          projectId?: string
-          storedSQLQuery?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "saved_user_macros_profileId_fkey"
-            columns: ["profileId"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "saved_user_macros_projectId_fkey"
-            columns: ["projectId"]
-            isOneToOne: false
-            referencedRelation: "projects"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       supabase_access_tokens: {
         Row: {
           accessToken: string
@@ -261,6 +226,80 @@ export type Database = {
             columns: ["profileId"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_macro_invocation_results: {
+        Row: {
+          createdAt: string
+          id: string
+          macroId: string
+          outputs: Json[]
+          sqlQueries: string[]
+        }
+        Insert: {
+          createdAt?: string
+          id?: string
+          macroId: string
+          outputs: Json[]
+          sqlQueries: string[]
+        }
+        Update: {
+          createdAt?: string
+          id?: string
+          macroId?: string
+          outputs?: Json[]
+          sqlQueries?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_macro_invocation_results_macroId_fkey"
+            columns: ["macroId"]
+            isOneToOne: false
+            referencedRelation: "user_macros"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_macros: {
+        Row: {
+          createdAt: string
+          id: string
+          macroTextPrompt: string
+          profileId: string
+          projectId: string
+          storedSQLQueries: string[]
+        }
+        Insert: {
+          createdAt?: string
+          id?: string
+          macroTextPrompt: string
+          profileId: string
+          projectId: string
+          storedSQLQueries: string[]
+        }
+        Update: {
+          createdAt?: string
+          id?: string
+          macroTextPrompt?: string
+          profileId?: string
+          projectId?: string
+          storedSQLQueries?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_user_macros_profileId_fkey"
+            columns: ["profileId"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "saved_user_macros_projectId_fkey"
+            columns: ["projectId"]
+            isOneToOne: false
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]

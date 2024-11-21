@@ -1,4 +1,5 @@
 import VisualiserUI from '@/components/visualiser/VisualiserUI';
+import { NotebookEntry } from '@/lib/global.types';
 import { createAdminClient, createServerClient } from '@/utils/supabaseServer';
 import { Metadata } from 'next';
 
@@ -48,7 +49,7 @@ export default async function VisualiserPage({ params, searchParams }: { params:
         .from('notebooks')
         .select('*')
         .eq('projectId', project.id)
-        .order('createdAt', { ascending: false });
+        .order('createdAt', { ascending: true });
 
     if (notebookError)
     {
@@ -59,5 +60,31 @@ export default async function VisualiserPage({ params, searchParams }: { params:
         </div>;
     }
 
-    return <VisualiserUI project={project} notebooks={notebooks} preSelectedNotebookId={searchParams.notebookId || ''} />;
+    let preSelectedNotebookEntries: NotebookEntry[] = [];
+    if (searchParams.notebookId)
+    {
+        const { data: entries, error: entryError } = await supabase
+            .from('notebook_entries')
+            .select('*')
+            .eq('notebookId', searchParams.notebookId)
+            .order('createdAt', { ascending: true });
+
+        if (entryError)
+        {
+            console.error(entryError);
+            return <div>
+                <h1>Error</h1>
+                <p>Failed to load notebook entries</p>
+            </div>;
+        }
+
+        preSelectedNotebookEntries = entries as NotebookEntry[];
+    }
+
+    return <VisualiserUI
+        project={project}
+        notebooks={notebooks}
+        preSelectedNotebookId={searchParams.notebookId || ''}
+        preSelectedNotebookEntries={preSelectedNotebookEntries}
+    />;
 }
