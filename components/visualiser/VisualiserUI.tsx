@@ -1,6 +1,6 @@
 'use client';
 
-import { Notebook, NotebookEntry, OutputType, Project } from '@/lib/global.types';
+import { Macro, Notebook, NotebookEntry, OutputType, Project } from '@/lib/global.types';
 import { Button, Divider, Menu, Textarea } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { BookOpen, BookPlus, ChevronsLeft, ChevronsRight, HelpCircle, MoreHorizontal, Search, Trash } from 'lucide-react';
@@ -21,13 +21,15 @@ interface VisualiserUIProps
 {
     project: Project;
     notebooks: Notebook[];
+    macros: Macro[];
     preSelectedNotebookId: string;
     preSelectedNotebookEntries: NotebookEntry[];
 }
 
 export default function VisualiserUI({ 
     project, 
-    notebooks: n, 
+    notebooks: n,
+    macros: m,
     preSelectedNotebookId,
     preSelectedNotebookEntries,
 }: VisualiserUIProps)
@@ -45,6 +47,8 @@ export default function VisualiserUI({
 
     const [notebooks, setNotebooks] = useState(n);
     const [selectedNotebookId, setSelectedNotebookId] = useState('');
+
+    const [macros, setMacros] = useState(m);
 
     const [notebookEntries, setNotebookEntries] = useState<NotebookEntry[]>(preSelectedNotebookEntries);
 
@@ -97,6 +101,7 @@ export default function VisualiserUI({
             attachedMacroId: null
         };
         localNotebookEntries.push(newNotebookEntry);
+        setNotebookEntries(localNotebookEntries);
 
         const { error } = await supabase.from('notebook_entries').insert(newNotebookEntry);
         if (error)
@@ -104,10 +109,10 @@ export default function VisualiserUI({
             console.error('Error creating new notebook entry:', error.message);
             notifications.show({ title: 'Error', message: 'Failed to create new notebook entry', color: 'red' });
             setIsSendingMessage(false);
+            setNotebookEntries(localNotebookEntries.slice(0, -1));
             return;
         }
 
-        setNotebookEntries(localNotebookEntries);
         setUserSearch('');
 
         const response = await fetch(`/app/${project.id}/visualiser-search`, {
@@ -423,7 +428,13 @@ export default function VisualiserUI({
                     }
                     {
                         notebookEntries.length > 0 &&
-                        notebookEntries.map((entry, index) => <NotebookEntryUI key={index} project={project} notebookEntry={entry} />)
+                        notebookEntries.map((entry, index) => <NotebookEntryUI
+                            disabled={isSendingMessage && index === notebookEntries.length - 1}
+                            key={index}
+                            project={project}
+                            notebookEntry={entry}
+                            onMacroSaving={newMacro => setMacros(macros => [...macros, newMacro])}
+                        />)
                     }
                 </section>
                 <div className='flex flex-row gap-3 bg-[#0e0e0e] p-2 sticky bottom-0'>
@@ -465,9 +476,15 @@ export default function VisualiserUI({
             </section>
             <Divider className='mt-2 mb-4' />
             {
+                macros.length === 0 &&
                 <small className='text-neutral-500 font-medium text-center'>
                     No macros exist yet. Create one by saving it from a notebook.
                 </small>
+            }
+            {
+                macros.map((macro, index) => <button key={index} className='text-[15px] rounded transition text-green hover:text-white font-semibold hover:bg-green p-2'>
+                    {macro.macroTextPrompt}
+                </button>)
             }
             <button className='absolute -left-3 top-[45%] z-auto p-2 w-fit rounded-full' onClick={() => setIsMacroHovering(!isMacroHovering)}>
                 {

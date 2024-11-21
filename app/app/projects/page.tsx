@@ -33,10 +33,7 @@ export default async function ProjectsPage()
 
 
     return <div className='w-full flex flex-col gap-5 px-16 py-8'>
-        <section className='w-full flex gap-3 justify-between'>
-            <h1>
-                Projects
-            </h1>
+        <section className='w-full flex gap-3 justify-end'>
             <CreateNewProject />
         </section>
         <div className='grid grid-cols-3 gap-5'>

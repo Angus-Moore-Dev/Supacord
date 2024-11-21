@@ -32,7 +32,7 @@ export default async function VisualiserPage({ params, searchParams }: { params:
     const supabase = createServerClient();
     const { data: project, error } = await supabase
         .from('projects')
-        .select('*')
+        .select('*, user_macros(*)')
         .eq('id', params.id)
         .single();
 
@@ -84,6 +84,7 @@ export default async function VisualiserPage({ params, searchParams }: { params:
     return <VisualiserUI
         project={project}
         notebooks={notebooks}
+        macros={project.user_macros}
         preSelectedNotebookId={searchParams.notebookId || ''}
         preSelectedNotebookEntries={preSelectedNotebookEntries}
     />;

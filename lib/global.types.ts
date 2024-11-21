@@ -6,6 +6,9 @@ export type Project = Database['public']['Tables']['projects']['Row'];
 export type Notebook = Database['public']['Tables']['notebooks']['Row'];
 export type NotebookEntry = Omit<Database['public']['Tables']['notebook_entries']['Row'], 'outputs'> & { outputs: NotebookEntryOutput[] };
 
+export type Profile = Database['public']['Tables']['profiles']['Row'];
+
+export type Macro = Database['public']['Tables']['user_macros']['Row'];
 
 export type EntityData = {
     columnName: string;
