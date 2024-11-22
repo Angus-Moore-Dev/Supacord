@@ -35,7 +35,7 @@ export default async function AppLayout({ children }: Readonly<{ children: React
             </Link>
             <Link href='/app/projects'>
                 <Button variant='subtle'>
-                    Macros & Observation
+                    Analytics & Observation
                 </Button>
             </Link>
             <Link href='/app/account' className='ml-auto'>

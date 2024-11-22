@@ -124,10 +124,27 @@ export default function NotebookEntryUI({
             entry.sqlQueries.map((query, index) =>
             {
                 return <div key={index} className='flex flex-col gap-3 p-4 bg-[#1a1a1a] rounded-lg'>
-                    <section className='flex items-end justify-between'>
+                    <section className='flex items-start justify-between'>
                         <h4 className='text-neutral-500 font-medium'>
-                            #{index + 1} SQL Query Run on <b>{project.databaseName}</b>
+                            <span className='text-green'>#{index + 1}</span> SQL Query Run on <b>{project.databaseName}</b>
                         </h4>
+                        <Menu width={250} shadow={'md'} position={'bottom-end'} disabled={disabled}>
+                            <Menu.Target>
+                                <MoreHorizontal size={20} className='transition hover:text-green min-w-[20px] hover:cursor-pointer' />
+                            </Menu.Target>
+                            <Menu.Dropdown>
+                                <Menu.Item disabled={isSaving} rightSection={<Pencil size={16} />}>
+                                    Edit SQL Query
+                                </Menu.Item>
+                                <Menu.Item disabled={isSaving} rightSection={<SquareKanban size={16} />}>
+                                    Change Output Type
+                                </Menu.Item>
+                                <Menu.Divider />
+                                <Menu.Item disabled={isSaving} color='red' rightSection={<Trash size={16} />}>
+                                    Delete Query
+                                </Menu.Item>
+                            </Menu.Dropdown>
+                        </Menu>
                     </section>
                     <CodeHighlightTabs
                         withExpandButton
@@ -140,23 +157,6 @@ export default function NotebookEntryUI({
                         className='rounded-lg font-bold'
                         getFileIcon={() => <Code2 size={16} />}
                     />
-                    {/* <Code
-                        lang='sql'
-                        className='font-medium whitespace-pre-wrap'
-                        style={{ fontSize: '0.9rem' }}
-                    >
-                        {query}
-                    </Code> */}
-                    {/* <Editor
-                        defaultLanguage='sql'
-                        height={150}
-                        theme="vs-dark"
-                        value={query}
-                        options={{ 
-                            readOnly: true,
-                            wordWrap: 'on'
-                        }}
-                    /> */}
                     {
                         entry.outputs[index] &&
                         entry.outputs[index].chunks.map((chunk, index) =>

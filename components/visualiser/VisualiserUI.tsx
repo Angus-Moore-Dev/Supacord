@@ -195,6 +195,37 @@ export default function VisualiserUI({
 
         reader.releaseLock();
         setIsSendingMessage(false);
+
+        // now we dispatch the title generation
+        const titleResponse = await fetch(`/app/${project.id}/notebook-naming`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                projectId: project.id,
+                notebookId,
+                userPrompt: userSearch
+            })
+        });
+
+        if (!titleResponse.ok)
+        {
+            console.error('Error generating title:', titleResponse.statusText);
+            notifications.show({ title: 'Error', message: 'Failed to generate title', color: 'red' });
+            return;
+        }
+
+        const { title } = await titleResponse.json();
+        if (title)
+        {
+            setNotebooks(notebooks => notebooks.map(notebook =>
+            {
+                if (notebook.id === notebookId)
+                    return { ...notebook, title };
+                return notebook;
+            }));
+        }
     }
 
 
