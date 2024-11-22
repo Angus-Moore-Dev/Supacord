@@ -243,7 +243,7 @@ export default function VisualiserUI({
 
     useEffect(() => 
     {
-        if (selectedNotebookId)
+        if (selectedNotebookId && !isSendingMessage)
         {
             setIsLoadingNotebook(true);
             router.replace(`/app/${project.id}?notebookId=${selectedNotebookId}`, undefined);

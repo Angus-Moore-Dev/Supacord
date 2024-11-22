@@ -2,12 +2,13 @@
 
 import { Macro, NotebookEntry, OutputType, Project } from '@/lib/global.types';
 import { Divider, Loader, Alert, Menu } from '@mantine/core';
-import { User2, Pencil, SaveAll, MoreHorizontal, Trash, FilePenLine, SquareKanban } from 'lucide-react';
+import { CodeHighlightTabs } from '@mantine/code-highlight';
+import { User2, Pencil, SaveAll, MoreHorizontal, Trash, FilePenLine, SquareKanban, Code2 } from 'lucide-react';
 import { BarChartVisual, PieChartVisual, LineChartVisual } from './ChartVisuals';
 import { TableVisual } from './TableVisual';
-import Editor from '@monaco-editor/react';
 import { createBrowserClient } from '@/utils/supabaseBrowser';
 import { useState } from 'react';
+import { notifications } from '@mantine/notifications';
 
 
 interface NotebookEntryUIProps
@@ -52,12 +53,28 @@ export default function NotebookEntryUI({
             return;
         }
 
+        // now we attach this macroId to the entry
+        const { error: updateError } = await supabase
+            .from('notebook_entries')
+            .update({
+                attachedMacroId: data.id
+            })
+            .eq('id', entry.id);
+        
+        if (updateError)
+        {
+            console.error(updateError);
+            notifications.show({ title: 'Failed to attach macro to entry', message: 'Please try again', color: 'red' });
+            setIsSaving(false);
+            return;
+        }
+
         onMacroSaving(data);
         setIsSaving(false);
     }
 
 
-    return <div className={'bg-[#2a2a2a] p-4 px-8 rounded-md mb-2 whitespace-pre-line flex flex-col gap-3'}>
+    return <div className={'bg-[#2a2a2a] p-4 px-8 rounded-md mb-2 whitespace-pre-line flex flex-col gap-5'}>
         <div className='flex gap-2 items-start'>
             <User2 size={32} className='text-transparent fill-green min-w-[32px]' />
             <h3 className='font-bold text-green mr-auto'>
@@ -102,13 +119,31 @@ export default function NotebookEntryUI({
         {
             entry.sqlQueries.map((query, index) =>
             {
-                return <div key={index} className='flex flex-col gap-3'>
+                return <div key={index} className='flex flex-col gap-3 p-4 bg-[#1a1a1a] rounded-lg'>
                     <section className='flex items-end justify-between'>
                         <h4 className='text-neutral-500 font-medium'>
-                            SQL Query Run on <b>{project.databaseName}</b>
+                            #{index + 1} SQL Query Run on <b>{project.databaseName}</b>
                         </h4>
                     </section>
-                    <Editor
+                    <CodeHighlightTabs
+                        withExpandButton
+                        defaultExpanded={query.length < 250}
+                        expandCodeLabel='Show Full Query'
+                        collapseCodeLabel='Hide Full Query'
+                        code={[
+                            { fileName: 'Query.sql', code: query, language: 'sql' }
+                        ]}
+                        className='rounded-lg font-bold'
+                        getFileIcon={() => <Code2 size={16} />}
+                    />
+                    {/* <Code
+                        lang='sql'
+                        className='font-medium whitespace-pre-wrap'
+                        style={{ fontSize: '0.9rem' }}
+                    >
+                        {query}
+                    </Code> */}
+                    {/* <Editor
                         defaultLanguage='sql'
                         height={150}
                         theme="vs-dark"
@@ -117,16 +152,10 @@ export default function NotebookEntryUI({
                             readOnly: true,
                             wordWrap: 'on'
                         }}
-                    />
-                </div>;
-            })
-        }
-        {
-            entry.outputs.map((output, index) =>
-            {
-                return <div key={index} className='flex flex-col gap-5'>
+                    /> */}
                     {
-                        output.chunks.map((chunk, index) =>
+                        entry.outputs[index] &&
+                        entry.outputs[index].chunks.map((chunk, index) =>
                         {
                             switch (chunk.type.toLowerCase())
                             {
@@ -158,6 +187,15 @@ export default function NotebookEntryUI({
                             }
                         }
                         )
+                    }
+                    {
+                        !entry.outputs[index] &&
+                        <div className='flex flex-col gap-3'>
+                            <Loader size={32} />
+                            <h4>
+                                Loading response...
+                            </h4>
+                        </div>
                     }
                 </div>;
             })

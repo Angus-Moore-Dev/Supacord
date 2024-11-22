@@ -1,3 +1,4 @@
+import '@mantine/code-highlight/styles.css';
 import SupacordLogo from '@/public/supacord_text.png';
 import SupacordIcon from '@/public/supacord_logo_transparent.png';
 import { createServerClient } from '@/utils/supabaseServer';
