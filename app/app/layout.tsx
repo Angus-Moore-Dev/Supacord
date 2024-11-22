@@ -33,6 +33,11 @@ export default async function AppLayout({ children }: Readonly<{ children: React
                     Projects
                 </Button>
             </Link>
+            <Link href='/app/projects'>
+                <Button variant='subtle'>
+                    Macros & Observation
+                </Button>
+            </Link>
             <Link href='/app/account' className='ml-auto'>
                 <Button leftSection={<User size={20} />} variant='subtle'>
                     {profileName}

@@ -9,8 +9,6 @@ import { Notifications } from '@mantine/notifications';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 
-// const inter = Raleway({ subsets: ['latin'] });
-
 export const metadata: Metadata = {
     title: 'Supacord',
     description: 'Empowering Supabase developers to create custom, perceptive analytics metrics, across all projects, enabled by Artificial Intelligence.',

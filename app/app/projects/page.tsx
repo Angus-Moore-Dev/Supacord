@@ -38,7 +38,7 @@ export default async function ProjectsPage()
         </section>
         <div className='grid grid-cols-3 gap-5'>
             {
-                data.map(project => <Card key={project.id} padding={'lg'} radius={'lg'} withBorder bg={'#2a2a2a'} className='flex flex-col gap-3    '>
+                data.map(project => <Card key={project.id} padding={'lg'} radius={'lg'} withBorder bg={'#2a2a2a'} className='flex flex-col gap-3'>
                     <section className='flex gap-3 items-start justify-between'>
                         <h3>
                             {project.databaseName}
@@ -55,7 +55,7 @@ export default async function ProjectsPage()
                     <section className='flex gap-3'>
                         <Link href={`/app/${project.id}`}>
                             <Button>
-                                Enter Notebook
+                                Enter Project &rarr;
                             </Button>
                         </Link>
                     </section>

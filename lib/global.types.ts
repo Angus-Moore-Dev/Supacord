@@ -8,7 +8,10 @@ export type NotebookEntry = Omit<Database['public']['Tables']['notebook_entries'
 
 export type Profile = Database['public']['Tables']['profiles']['Row'];
 
-export type Macro = Database['public']['Tables']['user_macros']['Row'];
+export type Macro = Omit<Database['public']['Tables']['user_macros']['Row'], 'queryData'> & { queryData: {
+    sqlQuery: string;
+    outputType: OutputType;
+}[] };
 
 export type EntityData = {
     columnName: string;

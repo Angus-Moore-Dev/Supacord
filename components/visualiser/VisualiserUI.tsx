@@ -447,6 +447,7 @@ export default function VisualiserUI({
                         minRows={5}
                         maxRows={15}
                         autoFocus
+                        size='lg'
                         onKeyDown={e => 
                         {
                             if (e.key === 'Enter' && !e.shiftKey)
@@ -483,7 +484,7 @@ export default function VisualiserUI({
             }
             {
                 macros.map((macro, index) => <button key={index} className='text-[15px] rounded transition text-green hover:text-white font-semibold hover:bg-green p-2'>
-                    {macro.macroTextPrompt}
+                    {macro.textPrompt}
                 </button>)
             }
             <button className='absolute -left-3 top-[45%] z-auto p-2 w-fit rounded-full' onClick={() => setIsMacroHovering(!isMacroHovering)}>

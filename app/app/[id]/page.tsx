@@ -1,5 +1,5 @@
 import VisualiserUI from '@/components/visualiser/VisualiserUI';
-import { NotebookEntry } from '@/lib/global.types';
+import { Macro, NotebookEntry } from '@/lib/global.types';
 import { createAdminClient, createServerClient } from '@/utils/supabaseServer';
 import { Metadata } from 'next';
 
@@ -84,7 +84,7 @@ export default async function VisualiserPage({ params, searchParams }: { params:
     return <VisualiserUI
         project={project}
         notebooks={notebooks}
-        macros={project.user_macros}
+        macros={project.user_macros as Macro[]}
         preSelectedNotebookId={searchParams.notebookId || ''}
         preSelectedNotebookEntries={preSelectedNotebookEntries}
     />;

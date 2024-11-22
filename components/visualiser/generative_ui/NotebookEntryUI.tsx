@@ -40,8 +40,12 @@ export default function NotebookEntryUI({
             .insert({
                 profileId: user.id,
                 projectId: project.id,
-                macroTextPrompt: entry.userPrompt,
-                storedSQLQueries: entry.sqlQueries,
+                textPrompt: entry.userPrompt,
+                queryData: entry.sqlQueries.map<{ sqlQuery: string, outputType: OutputType }>((query, index) => ({
+                    sqlQuery: query,
+                    outputType: entry.outputs[index].chunks[0].type
+                })),
+                pollingRate: ''
             })
             .select('*')
             .single();
@@ -69,7 +73,7 @@ export default function NotebookEntryUI({
             return;
         }
 
-        onMacroSaving(data);
+        onMacroSaving(data as Macro);
         setIsSaving(false);
     }
 

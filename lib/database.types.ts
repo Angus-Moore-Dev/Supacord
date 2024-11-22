@@ -291,26 +291,32 @@ export type Database = {
         Row: {
           createdAt: string
           id: string
-          macroTextPrompt: string
+          isAutonomouslyActive: boolean
+          pollingRate: string
           profileId: string
           projectId: string
-          storedSQLQueries: string[]
+          queryData: Json
+          textPrompt: string
         }
         Insert: {
           createdAt?: string
           id?: string
-          macroTextPrompt: string
+          isAutonomouslyActive?: boolean
+          pollingRate?: string
           profileId: string
           projectId: string
-          storedSQLQueries: string[]
+          queryData?: Json
+          textPrompt: string
         }
         Update: {
           createdAt?: string
           id?: string
-          macroTextPrompt?: string
+          isAutonomouslyActive?: boolean
+          pollingRate?: string
           profileId?: string
           projectId?: string
-          storedSQLQueries?: string[]
+          queryData?: Json
+          textPrompt?: string
         }
         Relationships: [
           {
