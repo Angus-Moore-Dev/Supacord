@@ -199,6 +199,7 @@ export async function POST(request: NextRequest)
               * Pie/Radial: Proportions
               * Scatter plots: Relationships
             - The visualisation xLabel, yLabel must correspond to the column names in the query exactly, and the title should be descriptive
+            - Any dates or timestamps should be formatted in a human-readable way
     
             Schema Structure:
             \`\`\`json

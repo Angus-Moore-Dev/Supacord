@@ -78,8 +78,8 @@ export default function NotebookEntryUI({
     }
 
 
-    return <div className={'bg-[#2a2a2a] p-4 px-8 rounded-md mb-2 whitespace-pre-line flex flex-col gap-5'}>
-        <div className='flex gap-2 items-start'>
+    return <div className={'bg-[#2a2a2a] p-4 px-8 rounded-md mb-2 whitespace-pre-line flex flex-col gap-5 relative'}>
+        <div className='flex gap-2 items-start sticky top-0 z-50 bg-[#2a2a2a] p-4 px-8 rounded-lg'>
             <User2 size={32} className='text-transparent fill-green min-w-[32px]' />
             <h3 className='font-bold text-green mr-auto'>
                 {entry.userPrompt}
@@ -123,7 +123,7 @@ export default function NotebookEntryUI({
         {
             entry.sqlQueries.map((query, index) =>
             {
-                return <div key={index} className='flex flex-col gap-3 p-4 bg-[#1a1a1a] rounded-lg'>
+                return <div key={index} className='flex flex-col gap-3 p-4 bg-[#1a1a1a] rounded-lg z-10'>
                     <section className='flex items-start justify-between'>
                         <h4 className='text-neutral-500 font-medium'>
                             <span className='text-green'>#{index + 1}</span> SQL Query Run on <b>{project.databaseName}</b>

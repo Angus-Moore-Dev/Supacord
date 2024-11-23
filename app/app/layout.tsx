@@ -33,7 +33,7 @@ export default async function AppLayout({ children }: Readonly<{ children: React
                     Projects
                 </Button>
             </Link>
-            <Link href='/app/projects'>
+            <Link href='/app/analytics'>
                 <Button variant='subtle'>
                     Analytics & Observation
                 </Button>
