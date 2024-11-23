@@ -1,6 +1,6 @@
 'use client';
 
-import { Macro, Notebook, NotebookEntry, OutputType, Project } from '@/lib/global.types';
+import { Macro, Notebook, NotebookEntry, OutputType, Profile, Project } from '@/lib/global.types';
 import { Button, Divider, Menu, Textarea } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { BookOpen, BookPlus, ChevronsLeft, ChevronsRight, HelpCircle, MoreHorizontal, Search, Trash } from 'lucide-react';
@@ -19,6 +19,7 @@ interface Section {
 
 interface VisualiserUIProps
 {
+    profile: Profile;
     project: Project;
     notebooks: Notebook[];
     macros: Macro[];
@@ -27,6 +28,7 @@ interface VisualiserUIProps
 }
 
 export default function VisualiserUI({ 
+    profile,
     project, 
     notebooks: n,
     macros: m,
@@ -460,6 +462,7 @@ export default function VisualiserUI({
                     {
                         notebookEntries.length > 0 &&
                         notebookEntries.map((entry, index) => <NotebookEntryUI
+                            profile={profile}
                             disabled={isSendingMessage && index === notebookEntries.length - 1}
                             key={index}
                             project={project}

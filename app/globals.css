@@ -118,3 +118,28 @@ h6 {
   width: 100%;
   overflow-x: auto;
 }
+
+/* Mantine Polling Slider Bar */
+.polling-slider-bar {
+  .mantine-Slider-trackContainer {
+    /* red through to blue, then green from left to right */
+    background: linear-gradient(
+      to right,
+      #ff0000 0%,
+      #ff0000 16.666%,
+      #ff8000 16.666%,
+      #ff8000 33.333%,
+      #ffff00 33.333%,
+      #ffff00 50%,
+      #80ff00 50%,
+      #80ff00 66.666%,
+      #00ff00 66.666%,
+      #00ff00 83.333%,
+      #00ffff 83.333%,
+      #00ffff 100%
+    );
+  }
+  .mantine-slider-bar {
+    background-color: transparent;
+  }
+}

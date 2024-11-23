@@ -1,18 +1,19 @@
 'use client';
 
-import { Macro, NotebookEntry, OutputType, Project } from '@/lib/global.types';
+import { Macro, NotebookEntry, OutputType, Profile, Project } from '@/lib/global.types';
 import { Divider, Loader, Alert, Menu } from '@mantine/core';
 import { CodeHighlightTabs } from '@mantine/code-highlight';
 import { User2, Pencil, SaveAll, MoreHorizontal, Trash, SquareKanban, Code2 } from 'lucide-react';
 import { BarChartVisual, PieChartVisual, LineChartVisual } from './ChartVisuals';
 import { TableVisual } from './TableVisual';
-import { createBrowserClient } from '@/utils/supabaseBrowser';
 import { useState } from 'react';
-import { notifications } from '@mantine/notifications';
+import Image from 'next/image';
+import CreateNewMacro from '@/components/macros/CreateNewMacro';
 
 
 interface NotebookEntryUIProps
 {
+    profile: Profile;
     disabled: boolean;
     project: Project;
     notebookEntry: NotebookEntry;
@@ -20,67 +21,24 @@ interface NotebookEntryUIProps
 }
 
 export default function NotebookEntryUI({
+    profile,
     disabled,
     project, 
     notebookEntry: entry,
-    onMacroSaving
+    // onMacroSaving
 }: NotebookEntryUIProps)
 {
-    const supabase = createBrowserClient();
-    const [isSaving, setIsSaving] = useState(false);
-
-
-    async function createNewMacro()
-    {
-        setIsSaving(true);
-        const user = (await supabase.auth.getUser()).data.user!;
-
-        const { data, error } = await supabase
-            .from('user_macros')
-            .insert({
-                profileId: user.id,
-                projectId: project.id,
-                textPrompt: entry.userPrompt,
-                queryData: entry.sqlQueries.map<{ sqlQuery: string, outputType: OutputType }>((query, index) => ({
-                    sqlQuery: query,
-                    outputType: entry.outputs[index].chunks[0].type
-                })),
-                pollingRate: ''
-            })
-            .select('*')
-            .single();
-
-        if (error)
-        {
-            console.error(error);
-            setIsSaving(false);
-            return;
-        }
-
-        // now we attach this macroId to the entry
-        const { error: updateError } = await supabase
-            .from('notebook_entries')
-            .update({
-                attachedMacroId: data.id
-            })
-            .eq('id', entry.id);
-        
-        if (updateError)
-        {
-            console.error(updateError);
-            notifications.show({ title: 'Failed to attach macro to entry', message: 'Please try again', color: 'red' });
-            setIsSaving(false);
-            return;
-        }
-
-        onMacroSaving(data as Macro);
-        setIsSaving(false);
-    }
-
+    const [openMacroModal, setOpenMacroModal] = useState(false);
 
     return <div className={'bg-[#2a2a2a] p-4 px-8 rounded-md mb-2 whitespace-pre-line flex flex-col gap-5 relative'}>
         <div className='flex gap-2 items-start sticky top-0 z-50 bg-[#2a2a2a] p-4 px-8 rounded-lg'>
-            <User2 size={32} className='text-transparent fill-green min-w-[32px]' />
+            {
+                !profile.profilePictureURL && <User2 size={32} className='text-transparent fill-green min-w-[32px]' />
+            }
+            {
+                profile.profilePictureURL &&
+                <Image src={profile.profilePictureURL} alt={'Profile Picture'} width={48} height={48} className='rounded-full object-cover max-w-[48px] max-h-[48px] h-[48px] w-[48px]' />
+            }
             <h3 className='font-bold text-green mr-auto'>
                 {entry.userPrompt}
             </h3>
@@ -89,15 +47,15 @@ export default function NotebookEntryUI({
                     <MoreHorizontal size={20} className='transition hover:text-green min-w-[20px] hover:cursor-pointer' />
                 </Menu.Target>
                 <Menu.Dropdown>
-                    <Menu.Item disabled={isSaving} color='blue' className='font-bold' rightSection={isSaving ? <Loader size={20} color='blue' /> : <SaveAll size={16} />} onClick={createNewMacro}>
-                        Save As New Macro
+                    <Menu.Item rightSection={<SaveAll size={16} />} onClick={() => setOpenMacroModal(true)} color='blue'>
+                        Create New Macro
                     </Menu.Item>
                     <Menu.Divider />
-                    <Menu.Item disabled={isSaving} rightSection={<Pencil size={16} />}>
+                    <Menu.Item rightSection={<Pencil size={16} />}>
                         Edit User Prompt
                     </Menu.Item>
                     <Menu.Divider />
-                    <Menu.Item disabled={isSaving} color='red' rightSection={<Trash size={16} />}>
+                    <Menu.Item color='red' rightSection={<Trash size={16} />}>
                         Delete Entry
                     </Menu.Item>
                 </Menu.Dropdown>
@@ -127,11 +85,11 @@ export default function NotebookEntryUI({
                                 <MoreHorizontal size={20} className='transition hover:text-green min-w-[20px] hover:cursor-pointer' />
                             </Menu.Target>
                             <Menu.Dropdown>
-                                <Menu.Item disabled={isSaving} rightSection={<SquareKanban size={16} />}>
+                                <Menu.Item  rightSection={<SquareKanban size={16} />}>
                                     Change Output Type
                                 </Menu.Item>
                                 <Menu.Divider />
-                                <Menu.Item disabled={isSaving} color='red' rightSection={<Trash size={16} />}>
+                                <Menu.Item  color='red' rightSection={<Trash size={16} />}>
                                     Delete Query
                                 </Menu.Item>
                             </Menu.Dropdown>
@@ -195,5 +153,11 @@ export default function NotebookEntryUI({
                 </div>;
             })
         }
+        <CreateNewMacro
+            opened={openMacroModal}
+            onClose={() => setOpenMacroModal(false)}
+            project={project}
+            notebookEntry={entry}
+        />
     </div>;
 }

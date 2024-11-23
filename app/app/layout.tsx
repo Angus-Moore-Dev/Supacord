@@ -14,10 +14,12 @@ export default async function AppLayout({ children }: Readonly<{ children: React
     const supabase = createServerClient();
     const user = (await supabase.auth.getUser()).data.user;
     let profileName = '';
+    let profilePictureURL = '';
     if (user)
     {
-        const { data: profile } = await supabase.from('profiles').select().eq('id', user.id).single();
+        const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
         profileName = profile ? `${profile?.firstName} ${profile?.lastName}` : 'My Account';
+        profilePictureURL = profile?.profilePictureURL || '';
     }
     else
         profileName = 'My Account';
@@ -39,7 +41,9 @@ export default async function AppLayout({ children }: Readonly<{ children: React
                 </Button>
             </Link>
             <Link href='/app/account' className='ml-auto'>
-                <Button leftSection={<User size={20} />} variant='subtle'>
+                <Button leftSection={
+                    !profilePictureURL ? <User size={20} /> : <Image src={profilePictureURL} alt='Profile Picture' width={20} height={20} className='rounded-full object-cover max-w-[20px] max-h-[20px]' />
+                } variant='subtle'>
                     {profileName}
                 </Button>
             </Link>

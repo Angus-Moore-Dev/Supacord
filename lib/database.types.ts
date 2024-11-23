@@ -34,6 +34,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      dashboard_macros: {
+        Row: {
+          createdAt: string
+          id: string
+          macroId: string
+          projectId: string
+          size: string
+        }
+        Insert: {
+          createdAt?: string
+          id?: string
+          macroId: string
+          projectId: string
+          size: string
+        }
+        Update: {
+          createdAt?: string
+          id?: string
+          macroId?: string
+          projectId?: string
+          size?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dashboard_macros_macroId_fkey"
+            columns: ["macroId"]
+            isOneToOne: false
+            referencedRelation: "user_macros"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dashboard_macros_projectId_fkey"
+            columns: ["projectId"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notebook_entries: {
         Row: {
           attachedMacroId: string | null
@@ -119,6 +158,7 @@ export type Database = {
           lastName: string
           openAIKey: string | null
           preferredLLMVendor: Database["public"]["Enums"]["preferredLLMVendor"]
+          profilePictureURL: string
           purposeOfUse: string | null
         }
         Insert: {
@@ -131,6 +171,7 @@ export type Database = {
           lastName: string
           openAIKey?: string | null
           preferredLLMVendor?: Database["public"]["Enums"]["preferredLLMVendor"]
+          profilePictureURL?: string
           purposeOfUse?: string | null
         }
         Update: {
@@ -143,6 +184,7 @@ export type Database = {
           lastName?: string
           openAIKey?: string | null
           preferredLLMVendor?: Database["public"]["Enums"]["preferredLLMVendor"]
+          profilePictureURL?: string
           purposeOfUse?: string | null
         }
         Relationships: []
@@ -297,6 +339,7 @@ export type Database = {
           projectId: string
           queryData: Json
           textPrompt: string
+          title: string
         }
         Insert: {
           createdAt?: string
@@ -307,6 +350,7 @@ export type Database = {
           projectId: string
           queryData?: Json
           textPrompt: string
+          title: string
         }
         Update: {
           createdAt?: string
@@ -317,6 +361,7 @@ export type Database = {
           projectId?: string
           queryData?: Json
           textPrompt?: string
+          title?: string
         }
         Relationships: [
           {
