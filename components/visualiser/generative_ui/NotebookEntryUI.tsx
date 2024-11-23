@@ -3,7 +3,7 @@
 import { Macro, NotebookEntry, OutputType, Project } from '@/lib/global.types';
 import { Divider, Loader, Alert, Menu } from '@mantine/core';
 import { CodeHighlightTabs } from '@mantine/code-highlight';
-import { User2, Pencil, SaveAll, MoreHorizontal, Trash, FilePenLine, SquareKanban, Code2 } from 'lucide-react';
+import { User2, Pencil, SaveAll, MoreHorizontal, Trash, SquareKanban, Code2 } from 'lucide-react';
 import { BarChartVisual, PieChartVisual, LineChartVisual } from './ChartVisuals';
 import { TableVisual } from './TableVisual';
 import { createBrowserClient } from '@/utils/supabaseBrowser';
@@ -96,12 +96,6 @@ export default function NotebookEntryUI({
                     <Menu.Item disabled={isSaving} rightSection={<Pencil size={16} />}>
                         Edit User Prompt
                     </Menu.Item>
-                    <Menu.Item disabled={isSaving} rightSection={<FilePenLine size={16} />}>
-                        Edit SQL Query
-                    </Menu.Item>
-                    <Menu.Item disabled={isSaving} rightSection={<SquareKanban size={16} />}>
-                        Change Output Type
-                    </Menu.Item>
                     <Menu.Divider />
                     <Menu.Item disabled={isSaving} color='red' rightSection={<Trash size={16} />}>
                         Delete Entry
@@ -133,9 +127,6 @@ export default function NotebookEntryUI({
                                 <MoreHorizontal size={20} className='transition hover:text-green min-w-[20px] hover:cursor-pointer' />
                             </Menu.Target>
                             <Menu.Dropdown>
-                                <Menu.Item disabled={isSaving} rightSection={<Pencil size={16} />}>
-                                    Edit SQL Query
-                                </Menu.Item>
                                 <Menu.Item disabled={isSaving} rightSection={<SquareKanban size={16} />}>
                                     Change Output Type
                                 </Menu.Item>
