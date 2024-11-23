@@ -43,6 +43,9 @@ export default async function AnalyticsPage()
         </div>;
     }
 
+    console.log(profile);
+    console.log(projectsAndMacros);
+
 
     return <div className='w-full flex flex-col gap-5 px-16 py-8'>
         <h1>
