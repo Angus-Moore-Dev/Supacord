@@ -31,7 +31,7 @@ export default function NotebookEntryUI({
     const [openMacroModal, setOpenMacroModal] = useState(false);
 
     return <div className={'bg-[#2a2a2a] p-4 px-8 rounded-md mb-2 whitespace-pre-line flex flex-col gap-5 relative'}>
-        <div className='flex gap-2 items-start sticky top-0 z-50 bg-[#2a2a2a] p-4 px-8 rounded-lg'>
+        <div className='flex gap-2 items-start sticky top-0 z-30 bg-[#2a2a2a] p-4 px-8 rounded-lg'>
             {
                 !profile.profilePictureURL && <User2 size={32} className='text-transparent fill-green min-w-[32px]' />
             }

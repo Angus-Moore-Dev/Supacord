@@ -334,7 +334,7 @@ export type Database = {
           createdAt: string
           id: string
           isAutonomouslyActive: boolean
-          pollingRate: string
+          pollingRate: Json
           profileId: string
           projectId: string
           queryData: Json
@@ -345,7 +345,7 @@ export type Database = {
           createdAt?: string
           id?: string
           isAutonomouslyActive?: boolean
-          pollingRate?: string
+          pollingRate: Json
           profileId: string
           projectId: string
           queryData?: Json
@@ -356,7 +356,7 @@ export type Database = {
           createdAt?: string
           id?: string
           isAutonomouslyActive?: boolean
-          pollingRate?: string
+          pollingRate?: Json
           profileId?: string
           projectId?: string
           queryData?: Json

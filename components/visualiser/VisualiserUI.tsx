@@ -500,7 +500,7 @@ export default function VisualiserUI({
         <section
             ref={savedMacroRef}
             className={`overflow-x-hidden min-w-[250px]
-                flex flex-col h-[calc(100vh-60px)] overflow-y-auto bg-primary border-l-[1px] border-neutral-700 px-4 pb-4 transition-all duration-300 z-50 relative
+                flex flex-col h-[calc(100vh-60px)] overflow-y-auto bg-primary border-l-[1px] border-neutral-700 px-4 pb-4 transition-all duration-300 z-30 relative
                 ${isMacroHovering ? 'w-[500px] bg-opacity-75 backdrop-blur-sm' : 'w-[250px]'}`}
         >
             <section className='flex gap-3 items-center justify-between pt-2'>

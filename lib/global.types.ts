@@ -8,10 +8,15 @@ export type NotebookEntry = Omit<Database['public']['Tables']['notebook_entries'
 
 export type Profile = Database['public']['Tables']['profiles']['Row'];
 
-export type Macro = Omit<Database['public']['Tables']['user_macros']['Row'], 'queryData'> & { queryData: {
+export type Macro = Omit<Omit<Database['public']['Tables']['user_macros']['Row'], 'queryData'> & { queryData: {
     sqlQuery: string;
     outputType: OutputType;
-}[] };
+    chartDetails?: {
+        xLabel: string;
+        yLabel: string;
+        title: string;
+    }
+}[] }, 'pollingRate'> & { pollingRate: MacroPollingRate };
 
 export type EntityData = {
     columnName: string;
@@ -89,4 +94,11 @@ export type SearchStreamOutput = {
 export type NotebookEntryOutput = {
     version: number;
     chunks: SearchStreamOutput[];
+}
+
+export type MacroPollingRate = {
+    seconds: number;
+    minutes: number;
+    hours: number;
+    days: number;
 }
