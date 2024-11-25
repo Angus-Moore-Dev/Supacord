@@ -10,17 +10,17 @@ import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 
 export const metadata: Metadata = {
-    title: 'Supacord',
+    title: 'Supalytics',
     description: 'Empowering Supabase developers to create custom, perceptive analytics metrics, across all projects, enabled by Artificial Intelligence.',
     icons: {
         icon: '/favicon.ico'
     },
     openGraph: {
-        title: 'Supacord',
+        title: 'Supalytics',
         description: 'Empowering Supabase developers to create custom, perceptive analytics metrics, across all projects, enabled by Artificial Intelligence.',
         type: 'website',
-        url: 'https://supacord.com',
-        siteName: 'Supacord',
+        url: 'https://supalytics.com',
+        siteName: 'Supalytics',
         images: [
             {
                 url: '/supacord_github_banner.png',

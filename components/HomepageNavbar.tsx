@@ -1,6 +1,6 @@
 'use client';
 import SupacordLogo from '@/public/supacord_logo_transparent.png';
-import Supacord from '@/public/supacord_text.png';
+import Supacord from '@/public/supalytics_alpha_text.png';
 import Image from 'next/image';
 import { User } from '@supabase/supabase-js';
 import { useEffect, useRef } from 'react';

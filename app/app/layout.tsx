@@ -1,5 +1,5 @@
 import '@mantine/code-highlight/styles.css';
-import SupacordLogo from '@/public/supacord_text.png';
+import SupacordLogo from '@/public/supalytics_alpha_text.png';
 import SupacordIcon from '@/public/supacord_logo_transparent.png';
 import { createServerClient } from '@/utils/supabaseServer';
 import { Button } from '@mantine/core';

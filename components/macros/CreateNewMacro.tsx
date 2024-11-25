@@ -1,13 +1,14 @@
 'use client';
 
 import { NotebookEntry, Project } from '@/lib/global.types';
-import getGradientColour from '@/utils/getGradientColour';
 import { CodeHighlightTabs } from '@mantine/code-highlight';
-import { Divider, Input, Modal, Slider } from '@mantine/core';
+import { Divider, Modal } from '@mantine/core';
 import { Code2 } from 'lucide-react';
 import { useState } from 'react';
 import SmallMacroUI, { LargeMacroUI } from './MacroUIs';
 import { v4 } from 'uuid';
+import PollingSliders from './PollingSliders';
+import MacroInput from './MacroInput';
 
 
 interface CreateNewMacroProps
@@ -18,6 +19,32 @@ interface CreateNewMacroProps
     onClose: () => void;
 }
 
+/**
+ * A modal component for creating new macros from notebook entries.
+ * 
+ * This component provides a form interface to:
+ * - Set a title for the macro (defaults to the notebook entry's user prompt)
+ * - View the SQL queries that will be included in the macro
+ * - Configure polling rates (seconds, minutes, hours, days)
+ * - Preview how the macro will appear in both large and small formats
+ * 
+ * @component
+ * @param {Object} props
+ * @param {Project} props.project - The current project context
+ * @param {NotebookEntry} props.notebookEntry - The notebook entry to create a macro from
+ * @param {boolean} props.opened - Controls the visibility of the modal
+ * @param {() => void} props.onClose - Callback function to handle modal closure
+ * 
+ * @example
+ * ```tsx
+ * <CreateNewMacro
+ *   project={currentProject}
+ *   notebookEntry={selectedEntry}
+ *   opened={isModalOpen}
+ *   onClose={() => setIsModalOpen(false)}
+ * />
+ * ```
+ */
 export default function CreateNewMacro({ 
     project, 
     notebookEntry,
@@ -38,16 +65,10 @@ export default function CreateNewMacro({
                 Create New Macro
             </h2>
             <Divider />
-            <Input.Wrapper label='Macro Title' required description="Change this if you want something more formal to summarise what data you're tracking">
-                <Input
-                    size='lg'
-                    autoFocus
-                    placeholder='Enter a title for your macro'
-                    value={title}
-                    onChange={(e) => setTitle(e.currentTarget.value)}
-                    className='font-bold'
-                />
-            </Input.Wrapper>
+            <MacroInput
+                title={title}
+                setTitle={setTitle}
+            />
             <Divider />
             <div className='p-4 bg-[#0e0e0e] rounded-lg flex flex-col gap-3'>
                 {
@@ -76,118 +97,19 @@ export default function CreateNewMacro({
                 Polling Rates & Scheduling
             </h2>
             <Divider />
-            <section className='flex gap-5'>
-                <div className='flex flex-col gap-5 flex-1'>
-                    {/* Polling Rates Slider */}
-                    <div className='flex flex-col gap-1 p-4 bg-[#0e0e0e] rounded-lg'>
-                        <p>
-                            Seconds
-                        </p>
-                        <Slider
-                            value={secondsPolling}
-                            onChange={setSecondsPolling}
-                            color={getGradientColour(secondsPolling, 0, 60)}
-                            marks={[
-                                { value: 0, label: '0s' },
-                                { value: 10, label: '10s' },
-                                { value: 20, label: '20s' },
-                                { value: 30, label: '30s' },
-                                { value: 45, label: '45s' },
-                                { value: 60, label: '60s' }
-                            ]}
-                            min={0}
-                            max={60}
-                            className='mb-6'
-                        />
-                    </div>
-                    <div className='flex flex-col gap-1 p-4 bg-[#0e0e0e] rounded-lg'>
-                        <p>
-                            Minutes
-                        </p>
-                        <Slider
-                            value={minutesPolling}
-                            onChange={setMinutesPolling}
-                            color={getGradientColour(minutesPolling, 0, 60)}
-                            marks={[
-                                { value: 0, label: '0m' },
-                                { value: 15, label: '15m' },
-                                { value: 30, label: '30m' },
-                                { value: 45, label: '45m' },
-                                { value: 60, label: '60m' }
-                            ]}
-                            min={0}
-                            max={60}
-                            className='mb-6'
-                        />
-                    </div>
-                    <div className='flex flex-col gap-1 p-4 bg-[#0e0e0e] rounded-lg'>
-                        <p>
-                            Hours
-                        </p>
-                        <Slider
-                            value={hoursPolling}
-                            onChange={setHoursPolling}
-                            color={getGradientColour(hoursPolling, 0, 24)}
-                            marks={[
-                                { value: 0, label: '0h' },
-                                { value: 6, label: '6h' },
-                                { value: 12, label: '12h' },
-                                { value: 18, label: '18h' },
-                                { value: 24, label: '24h' }
-                            ]}
-                            min={0}
-                            max={24}
-                            className='mb-6'
-                        />
-                    </div>
-                    <div className='flex flex-col gap-1 p-4 bg-[#0e0e0e] rounded-lg'>
-                        <p>
-                            Days
-                        </p>
-                        <Slider
-                            value={daysPolling}
-                            onChange={setDaysPolling}
-                            color={getGradientColour(daysPolling, 0, 30)}
-                            marks={[
-                                { value: 0, label: '0d' },
-                                { value: 7, label: '7d' },
-                                { value: 14, label: '14d' },
-                                { value: 21, label: '21d' },
-                                { value: 30, label: '30d' }
-                            ]}
-                            min={0}
-                            max={30}
-                            className='mb-6'
-                        />
-                    </div>
-                </div>
-                <div className='flex flex-col gap-5 bg-[#0e0e0e] p-4 rounded-lg flex-1'>
-                    <h3>
-                        Preview
-                    </h3>
-                    <p className='text-medium-500'>
-                        The frequency of this macro will be every:
-                        <br />
-                        <span className='text-green font-bold'>
-                            {/* rewrite the below so that it only has commas if there's more itself as an attribute */}
-                            {daysPolling > 0 && `${daysPolling} day${daysPolling > 1 ? 's' : ''}${hoursPolling > 0 || minutesPolling > 0 || secondsPolling > 0 ? ', ' : ''}`}
-                            {hoursPolling > 0 && `${hoursPolling} hours${minutesPolling > 0 || secondsPolling > 0 ? ', ' : ''}`}
-                            {minutesPolling > 0 && `${minutesPolling} minutes${secondsPolling > 0 ? ', ' : ''}`}
-                            {secondsPolling > 0 && `${secondsPolling} seconds`}
-                        </span>
-                        {
-                            daysPolling === 0 && hoursPolling === 0 && minutesPolling === 0 && secondsPolling === 0 &&
-                            <>
-                                <br />
-                                <br />
-                                <p className='text-red-500'>
-                                    This macro will have to be manually invoked by you.
-                                </p>
-                            </>
-                        }
-                    </p>
-                </div>
-            </section>
+            <PollingSliders
+                seconds={secondsPolling}
+                minutes={minutesPolling}
+                hours={hoursPolling}
+                days={daysPolling}
+                onChange={(seconds, minutes, hours, days) => 
+                {
+                    setSecondsPolling(seconds);
+                    setMinutesPolling(minutes);
+                    setHoursPolling(hours);
+                    setDaysPolling(days);
+                }}
+            />
             <h2 className='text-green text-center'>
                 Previews
             </h2>
