@@ -26,6 +26,39 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
     };
 }
 
+/**
+ * Visualiser Page Component
+ * 
+ * Server component that renders the data visualization interface for a specific project.
+ * Handles data fetching and initial state setup for the VisualiserUI client component.
+ *
+ * @param {Object} props
+ * @param {Object} props.params - URL parameters
+ * @param {string} props.params.id - Project ID from URL
+ * @param {Object} props.searchParams - URL search parameters 
+ * @param {string} props.searchParams.notebookId - Optional notebook ID to pre-select
+ *
+ * Features:
+ * - Fetches project details including:
+ *   - Database name and configuration
+ *   - Associated user macros
+ *   - Project owner profile
+ * - Loads all notebooks for the project
+ * - Pre-fetches entries for selected notebook if notebookId provided
+ * - Handles error states for failed data fetches
+ * - Generates dynamic page metadata based on project
+ *
+ * Data Flow:
+ * 1. Fetches project, profile and macro data
+ * 2. Loads all notebooks for project
+ * 3. If notebook ID provided, fetches associated entries
+ * 4. Passes all data to VisualiserUI client component
+ *
+ * Error Handling:
+ * - Displays error UI if project fetch fails
+ * - Handles notebook and entry fetch failures
+ * - Preserves type safety through database types
+ */
 
 export default async function VisualiserPage({ params, searchParams }: { params: { id: string }, searchParams: { notebookId: string } })
 {

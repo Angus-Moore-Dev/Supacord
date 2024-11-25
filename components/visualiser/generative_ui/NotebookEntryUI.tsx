@@ -20,6 +20,45 @@ interface NotebookEntryUIProps
     onMacroSaving: (macro: Macro) => void;
 }
 
+
+/**
+ * NotebookEntryUI Component
+ * 
+ * A component that displays a single notebook entry in a SQL analysis project. It shows
+ * user prompts, SQL queries, and their corresponding outputs in various visual formats.
+ * 
+ * @component
+ * 
+ * Props:
+ * @param {Profile} profile - The user profile information including optional profile picture
+ * @param {boolean} disabled - Whether the entry's interactive elements should be disabled
+ * @param {Project} project - The current project information including database name
+ * @param {NotebookEntry} notebookEntry - The notebook entry data containing prompts, queries, and outputs
+ * @param {Function} onMacroSaving - Callback function when a new macro is saved (currently commented out)
+ * 
+ * Features:
+ * - Displays user profile picture (or default icon) and prompt
+ * - Shows SQL queries with syntax highlighting and expandable view
+ * - Supports multiple output types:
+ *   - Text
+ *   - Data Tables
+ *   - Bar Charts
+ *   - Line Charts
+ *   - Pie Charts
+ *   - Error Messages
+ * - Interactive menu with options to:
+ *   - Create new macros
+ *   - Edit prompts
+ *   - Delete entries
+ *   - Change output types
+ * - Loading states for queries and outputs
+ * 
+ * Visual Elements:
+ * - Sticky header with user info and actions
+ * - Dark theme with green accent colors
+ * - Rounded containers with proper spacing
+ * - Expandable code blocks for long queries
+ */
 export default function NotebookEntryUI({
     profile,
     disabled,

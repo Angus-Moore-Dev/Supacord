@@ -1,3 +1,5 @@
+
+
 'use client';
 
 import { Macro, Notebook, NotebookEntry, OutputType, Profile, Project } from '@/lib/global.types';
@@ -26,6 +28,58 @@ interface VisualiserUIProps
     preSelectedNotebookId: string;
     preSelectedNotebookEntries: NotebookEntry[];
 }
+
+/**
+ * VisualiserUI Component
+ * 
+ * A comprehensive interface for interacting with SQL notebooks and macros in a data visualization context.
+ * 
+ * @component
+ * 
+ * Props:
+ * @param {Profile} profile - User profile information including authentication details
+ * @param {Project} project - Current project context including database connection info
+ * @param {Notebook[]} notebooks - Array of available notebooks
+ * @param {Macro[]} macros - Array of saved macros for the project
+ * @param {string} preSelectedNotebookId - ID of notebook to load initially (if any)
+ * @param {NotebookEntry[]} preSelectedNotebookEntries - Pre-loaded entries for the selected notebook
+ * 
+ * Features:
+ * - Notebook Management:
+ *   - Create new notebooks
+ *   - Switch between existing notebooks
+ *   - Delete notebooks
+ *   - Rename notebooks
+ * 
+ * - Query Interface:
+ *   - Natural language query input
+ *   - Real-time query processing
+ *   - Loading states and error handling
+ * 
+ * - Visualization:
+ *   - Multiple visualization types (charts, tables, etc)
+ *   - Responsive layout with collapsible sidebars
+ *   - Entry history with metadata
+ * 
+ * - Macro Integration:
+ *   - Create macros from queries
+ *   - View and manage saved macros
+ *   - Macro scheduling and automation
+ * 
+ * State Management:
+ * - Tracks loading states
+ * - Manages notebook selection and entries
+ * - Handles user input and query processing
+ * - Maintains sidebar collapse states
+ * 
+ * Layout:
+ * - Three-panel design:
+ *   - Left: Notebook navigation
+ *   - Center: Query interface and visualizations
+ *   - Right: Saved macros
+ * - Responsive with collapsible panels
+ * - Sticky headers and input areas
+ */
 
 export default function VisualiserUI({ 
     profile,
@@ -100,7 +154,6 @@ export default function VisualiserUI({
             userPrompt: userSearch,
             sqlQueries: [],
             outputs: [],
-            attachedMacroId: null
         };
         localNotebookEntries.push(newNotebookEntry);
         setNotebookEntries(localNotebookEntries);

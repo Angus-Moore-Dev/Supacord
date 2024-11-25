@@ -75,7 +75,6 @@ export type Database = {
       }
       notebook_entries: {
         Row: {
-          attachedMacroId: string | null
           createdAt: string
           id: string
           notebookId: string
@@ -84,7 +83,6 @@ export type Database = {
           userPrompt: string
         }
         Insert: {
-          attachedMacroId?: string | null
           createdAt?: string
           id?: string
           notebookId: string
@@ -93,7 +91,6 @@ export type Database = {
           userPrompt: string
         }
         Update: {
-          attachedMacroId?: string | null
           createdAt?: string
           id?: string
           notebookId?: string
@@ -107,13 +104,6 @@ export type Database = {
             columns: ["notebookId"]
             isOneToOne: false
             referencedRelation: "notebooks"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "notebook_entries_attachedMacroId_fkey"
-            columns: ["attachedMacroId"]
-            isOneToOne: false
-            referencedRelation: "user_macros"
             referencedColumns: ["id"]
           },
         ]
