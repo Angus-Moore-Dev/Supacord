@@ -23,8 +23,8 @@ export const metadata: Metadata = {
         siteName: 'Supalytics',
         images: [
             {
-                url: '/supacord_github_banner.png',
-                width: 2500,
+                url: '/supalytics_github_banner.png',
+                width: 1600,
                 height: 1003,
                 alt: 'Empowering Supabase developers to create custom, perceptive analytics metrics, across all projects, enabled by Artificial Intelligence.'
             }
