@@ -6,7 +6,7 @@ import { CodeHighlightTabs } from '@mantine/code-highlight';
 import { Divider, Input, Modal, Slider } from '@mantine/core';
 import { Code2 } from 'lucide-react';
 import { useState } from 'react';
-import LargeMacroUI from './LargeMacroUI';
+import SmallMacroUI, { LargeMacroUI } from './MacroUIs';
 import { v4 } from 'uuid';
 
 
@@ -48,9 +48,10 @@ export default function CreateNewMacro({
                     className='font-bold'
                 />
             </Input.Wrapper>
+            <Divider />
             <div className='p-4 bg-[#0e0e0e] rounded-lg flex flex-col gap-3'>
                 {
-                    notebookEntry.sqlQueries.map((query, index) => <div key={index} className='bg-[#1a1a1a] p-4 rounded-lg flex flex-col gap-1'>
+                    notebookEntry.sqlQueries.map((query, index) => <div key={index} className='bg-[#1a1a1a] p-4 rounded-lg flex flex-col gap-1 z-30'>
                         <section className='flex gap-3 items-center justify-between'>
                             <p className='text-neutral-500'>
                                 <b className='text-green'>#{index + 1}</b> SQL Queries Run On {project.databaseName}
@@ -174,23 +175,16 @@ export default function CreateNewMacro({
                             {minutesPolling > 0 && `${minutesPolling} minutes${secondsPolling > 0 ? ', ' : ''}`}
                             {secondsPolling > 0 && `${secondsPolling} seconds`}
                         </span>
-                        <br />
-                        <br />
-                        In hours this is approximately:
-                        <br />
-                        <span className='text-green font-bold'>
-                            {/* Seconds */}
-                            {Math.round((daysPolling * 24 * 60 * 60 + hoursPolling * 60 * 60 + minutesPolling * 60 + secondsPolling) * 100) / 100} seconds
-                            <br />
-                            {/* Minutes */}
-                            {Math.round((daysPolling * 24 * 60 + hoursPolling * 60 + minutesPolling + secondsPolling / 60) * 100) / 100} minutes
-                            <br />
-                            {/* Hours */}
-                            {Math.round((daysPolling * 24 + hoursPolling + minutesPolling / 60 + secondsPolling / 3600) * 100) / 100} hours
-                            <br />
-                            {/* Days */}
-                            {Math.round((daysPolling + hoursPolling / 24 + minutesPolling / 1440 + secondsPolling / 86400) * 100) / 100} days
-                        </span>
+                        {
+                            daysPolling === 0 && hoursPolling === 0 && minutesPolling === 0 && secondsPolling === 0 &&
+                            <>
+                                <br />
+                                <br />
+                                <p className='text-red-500'>
+                                    This macro will have to be manually invoked by you.
+                                </p>
+                            </>
+                        }
                     </p>
                 </div>
             </section>
@@ -199,6 +193,9 @@ export default function CreateNewMacro({
             </h2>
             <Divider />
             <div className='flex flex-col gap-5'>
+                <h3 className='text-green text-center'>
+                    Large Preview
+                </h3>
                 <LargeMacroUI
                     macro={{
                         id: v4(),
@@ -216,8 +213,65 @@ export default function CreateNewMacro({
                         textPrompt: notebookEntry.userPrompt,
                         queryData: notebookEntry.sqlQueries.map((query, index) => ({
                             sqlQuery: query,
+                            // TODO: HOLY HACKAMOLY
+                            chartDetails: notebookEntry.outputs[index].chunks[0].type.includes('chart') ? {
+                                xLabel: (JSON.parse(notebookEntry.outputs[index].chunks[0].content) as { xLabel: string, yLabel: string, title: string }).xLabel,
+                                yLabel: (JSON.parse(notebookEntry.outputs[index].chunks[0].content) as { xLabel: string, yLabel: string, title: string }).yLabel,
+                                title: (JSON.parse(notebookEntry.outputs[index].chunks[0].content) as { xLabel: string, yLabel: string, title: string }).title,
+                            } : undefined,
                             outputType: notebookEntry.outputs[index].chunks[0].type, // TODO: Remove Hardcode!!!
                         })),
+                    }}
+                    results={{
+                        id: v4(),
+                        createdAt: new Date().toISOString(),
+                        macroId: v4(),
+                        sqlQueries: notebookEntry.sqlQueries,
+                        outputs: notebookEntry.outputs.map((output) => ({
+                            type: output.chunks[0].type, // TODO: Hardcoded, fix this
+                            content: output.chunks[0].content // TODO: Hardcoded, fix this
+                        }))
+                    }}
+                    // we'll get the latest results from the notebook entryl
+                />
+                <h3 className='text-green text-center'>
+                    Small Preview
+                </h3>
+                <SmallMacroUI
+                    macro={{
+                        id: v4(),
+                        createdAt: new Date().toISOString(),
+                        isAutonomouslyActive: false,
+                        pollingRate: {
+                            seconds: secondsPolling,
+                            minutes: minutesPolling,
+                            hours: hoursPolling,
+                            days: daysPolling
+                        },
+                        title,
+                        profileId: project.profileId,
+                        projectId: project.id,
+                        textPrompt: notebookEntry.userPrompt,
+                        queryData: notebookEntry.sqlQueries.map((query, index) => ({
+                            sqlQuery: query,
+                            // TODO: HOLY HACKAMOLY
+                            chartDetails: notebookEntry.outputs[index].chunks[0].type.includes('chart') ? {
+                                xLabel: (JSON.parse(notebookEntry.outputs[index].chunks[0].content) as { xLabel: string, yLabel: string, title: string }).xLabel,
+                                yLabel: (JSON.parse(notebookEntry.outputs[index].chunks[0].content) as { xLabel: string, yLabel: string, title: string }).yLabel,
+                                title: (JSON.parse(notebookEntry.outputs[index].chunks[0].content) as { xLabel: string, yLabel: string, title: string }).title,
+                            } : undefined,
+                            outputType: notebookEntry.outputs[index].chunks[0].type, // TODO: Remove Hardcode!!!
+                        })),
+                    }}
+                    results={{
+                        id: v4(),
+                        createdAt: new Date().toISOString(),
+                        macroId: v4(),
+                        sqlQueries: notebookEntry.sqlQueries,
+                        outputs: notebookEntry.outputs.map((output) => ({
+                            type: output.chunks[0].type, // TODO: Hardcoded, fix this
+                            content: output.chunks[0].content // TODO: Hardcoded, fix this
+                        }))
                     }}
                 />
             </div>

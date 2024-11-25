@@ -25,8 +25,10 @@ export function TableVisual(props: { data: TableData }): JSX.Element
         return String(value);
     };
 
-    return (
-        <Table striped highlightOnHover withTableBorder withColumnBorders stickyHeader className='rounded-lg'>
+    return <div className='flex flex-col max-h-[400px] overflow-y-auto'>
+        <Table striped highlightOnHover withTableBorder withColumnBorders stickyHeader
+            className='rounded-lg'
+        >
             <Table.Thead className='bg-green text-white' bg={'green'}>
                 <Table.Tr>
                     {columns.map((column: string): JSX.Element => (
@@ -48,5 +50,5 @@ export function TableVisual(props: { data: TableData }): JSX.Element
                 ))}
             </Table.Tbody>
         </Table>
-    );
+    </div>;
 }

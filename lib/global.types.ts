@@ -8,6 +8,8 @@ export type NotebookEntry = Omit<Database['public']['Tables']['notebook_entries'
 
 export type Profile = Database['public']['Tables']['profiles']['Row'];
 
+export type MacroInvocationResults = Omit<Database['public']['Tables']['user_macro_invocation_results']['Row'], 'outputs'> & { outputs: SearchStreamOutput[] };
+
 export type Macro = Omit<Omit<Database['public']['Tables']['user_macros']['Row'], 'queryData'> & { queryData: {
     sqlQuery: string;
     outputType: OutputType;
