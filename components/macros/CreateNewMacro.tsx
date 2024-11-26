@@ -1,14 +1,16 @@
 'use client';
 
-import { NotebookEntry, Project } from '@/lib/global.types';
+import { Macro, NotebookEntry, Project } from '@/lib/global.types';
 import { CodeHighlightTabs } from '@mantine/code-highlight';
-import { Divider, Modal } from '@mantine/core';
+import { Button, Divider, Modal } from '@mantine/core';
 import { Code2 } from 'lucide-react';
 import { useState } from 'react';
 import SmallMacroUI, { LargeMacroUI } from './MacroUIs';
 import { v4 } from 'uuid';
 import PollingSliders from './PollingSliders';
 import MacroInput from './MacroInput';
+import { createBrowserClient } from '@/utils/supabaseBrowser';
+import { notifications } from '@mantine/notifications';
 
 
 interface CreateNewMacroProps
@@ -17,6 +19,7 @@ interface CreateNewMacroProps
     notebookEntry: NotebookEntry;
     opened: boolean;
     onClose: () => void;
+    onCreated: (macro: Macro) => void;
 }
 
 /**
@@ -42,6 +45,9 @@ interface CreateNewMacroProps
  *   notebookEntry={selectedEntry}
  *   opened={isModalOpen}
  *   onClose={() => setIsModalOpen(false)}
+ *   onCreated={(macro) => {
+ *       // Handle the newly created macro
+ *   }}
  * />
  * ```
  */
@@ -49,14 +55,69 @@ export default function CreateNewMacro({
     project, 
     notebookEntry,
     opened: o,
-    onClose
+    onClose,
+    onCreated
 }: CreateNewMacroProps)
 {
+    const supabase = createBrowserClient();
+
     const [title, setTitle] = useState(notebookEntry.userPrompt || ''); // default to user prompt
     const [secondsPolling, setSecondsPolling] = useState(3); // min 3, max 60
     const [minutesPolling, setMinutesPolling] = useState(0); // min 0, max 60
     const [hoursPolling, setHoursPolling] = useState(0); // min 0, max 24
     const [daysPolling, setDaysPolling] = useState(0); // min 0, max 30
+
+    const [isCreating, setIsCreating] = useState(false);
+
+
+    async function createMacro()
+    {
+        setIsCreating(true);
+        
+        const macro: Macro = {
+            id: v4(),
+            createdAt: new Date().toISOString(),
+            isAutonomouslyActive: true, // TODO: Default active but eventually make this a user setting
+            pollingRate: {
+                seconds: secondsPolling,
+                minutes: minutesPolling,
+                hours: hoursPolling,
+                days: daysPolling
+            },
+            title,
+            profileId: project.profileId,
+            projectId: project.id,
+            textPrompt: notebookEntry.userPrompt,
+            queryData: notebookEntry.sqlQueries.map((query, index) => ({
+                sqlQuery: query,
+                outputType: notebookEntry.outputs[index].chunks[0].type,
+            })),
+        };
+
+        const { data: newMacro, error } = await supabase.from('user_macros').insert(macro).select('*').single();
+
+        if (error)
+        {
+            console.error(error);
+            notifications.show({
+                title: 'Error Creating Macro',
+                message: 'There was an error creating your macro. Please try again later.',
+                color: 'red',
+            });
+        }
+        else
+        {
+            notifications.show({
+                title: 'Macro Created',
+                message: 'Your macro has been created successfully.',
+                color: 'green',
+            });
+            onClose();
+            onCreated(newMacro as Macro);
+        }
+
+        setIsCreating(false);
+    }
 
 
     return <Modal opened={o} onClose={onClose} size={'50%'} radius='lg' padding={'lg'} centered lockScroll withCloseButton={false}>
@@ -68,6 +129,7 @@ export default function CreateNewMacro({
             <MacroInput
                 title={title}
                 setTitle={setTitle}
+                disabled={isCreating}
             />
             <Divider />
             <div className='p-4 bg-[#0e0e0e] rounded-lg flex flex-col gap-3'>
@@ -98,6 +160,7 @@ export default function CreateNewMacro({
             </h2>
             <Divider />
             <PollingSliders
+                disabled={isCreating}
                 seconds={secondsPolling}
                 minutes={minutesPolling}
                 hours={hoursPolling}
@@ -197,6 +260,16 @@ export default function CreateNewMacro({
                     }}
                 />
             </div>
+            <Divider className='my-5' />
+            <Button
+                onClick={createMacro}
+                loading={isCreating}
+                fullWidth
+                color='blue'
+                size='lg'
+            >
+                Create New Macro
+            </Button>
         </div>
     </Modal>;
 }

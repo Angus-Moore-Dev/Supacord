@@ -3,12 +3,13 @@
 import { Macro, NotebookEntry, OutputType, Profile, Project } from '@/lib/global.types';
 import { Divider, Loader, Alert, Menu } from '@mantine/core';
 import { CodeHighlightTabs } from '@mantine/code-highlight';
-import { User2, Pencil, SaveAll, MoreHorizontal, Trash, SquareKanban, Code2 } from 'lucide-react';
+import { User2, SaveAll, MoreHorizontal, Trash, SquareKanban, Code2 } from 'lucide-react';
 import { BarChartVisual, PieChartVisual, LineChartVisual } from './ChartVisuals';
 import { TableVisual } from './TableVisual';
 import { useState } from 'react';
 import Image from 'next/image';
 import CreateNewMacro from '@/components/macros/CreateNewMacro';
+import { createBrowserClient } from '@/utils/supabaseBrowser';
 
 
 interface NotebookEntryUIProps
@@ -17,7 +18,8 @@ interface NotebookEntryUIProps
     disabled: boolean;
     project: Project;
     notebookEntry: NotebookEntry;
-    onMacroSaving: (macro: Macro) => void;
+    onDeleteEntry: () => void;
+    onMacroCreated: (macro: Macro) => void;
 }
 
 
@@ -64,10 +66,21 @@ export default function NotebookEntryUI({
     disabled,
     project, 
     notebookEntry: entry,
-    // onMacroSaving
+    onDeleteEntry,
+    onMacroCreated
 }: NotebookEntryUIProps)
 {
+    const supabase = createBrowserClient();
     const [openMacroModal, setOpenMacroModal] = useState(false);
+
+    async function deleteEntry()
+    {
+        if (confirm('Are you sure you want to delete this entry?'))
+        {
+            await supabase.from('notebook_entries').delete().eq('id', entry.id);
+            onDeleteEntry();
+        }
+    }
 
     return <div className={'bg-[#2a2a2a] p-4 px-8 rounded-md mb-2 whitespace-pre-line flex flex-col gap-5 relative'}>
         <div className='flex gap-2 items-start sticky top-0 z-30 bg-[#2a2a2a] p-4 px-8 rounded-lg'>
@@ -90,11 +103,7 @@ export default function NotebookEntryUI({
                         Create New Macro
                     </Menu.Item>
                     <Menu.Divider />
-                    <Menu.Item rightSection={<Pencil size={16} />}>
-                        Edit User Prompt
-                    </Menu.Item>
-                    <Menu.Divider />
-                    <Menu.Item color='red' rightSection={<Trash size={16} />}>
+                    <Menu.Item color='red' rightSection={<Trash size={16} />} onClick={deleteEntry}>
                         Delete Entry
                     </Menu.Item>
                 </Menu.Dropdown>
@@ -197,6 +206,7 @@ export default function NotebookEntryUI({
             onClose={() => setOpenMacroModal(false)}
             project={project}
             notebookEntry={entry}
+            onCreated={onMacroCreated}
         />
     </div>;
 }

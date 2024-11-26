@@ -12,9 +12,10 @@ interface PollingSlidersProps
     hours: number;
     days: number;
     onChange: (seconds: number, minutes: number, hours: number, days: number) => void;
+    disabled?: boolean;
 }
 
-export default function PollingSliders({ seconds, minutes, hours, days, onChange }: PollingSlidersProps) 
+export default function PollingSliders({ seconds, minutes, hours, days, onChange, disabled = false }: PollingSlidersProps) 
 {
     const [secondsPolling, setSecondsPolling] = useState(seconds);
     const [minutesPolling, setMinutesPolling] = useState(minutes);
@@ -34,14 +35,20 @@ export default function PollingSliders({ seconds, minutes, hours, days, onChange
     }, [debouncedSecondsPolling, debouncedMinutesPolling, debouncedHoursPolling, debouncedDaysPolling, onChange]);
 
 
-    return <section className='flex gap-5'>
+    return <section className='flex flex-col gap-5'>
+        <div className='flex flex-col gap-1 p-4 bg-[#0e0e0e] rounded-lg'>
+            <p>
+                This macro will run every <b className='text-green'>{secondsPolling}s, {minutesPolling}m, {hoursPolling}h, {daysPolling}d</b>.
+            </p>
+        </div>
         <div className='flex flex-col gap-5 flex-1'>
             {/* Polling Rates Slider */}
             <div className='flex flex-col gap-1 p-4 bg-[#0e0e0e] rounded-lg'>
                 <p>
-                Seconds
+                    Seconds
                 </p>
                 <Slider
+                    disabled={disabled}
                     value={secondsPolling}
                     onChange={setSecondsPolling}
                     color={getGradientColour(secondsPolling, 0, 60)}
@@ -60,9 +67,10 @@ export default function PollingSliders({ seconds, minutes, hours, days, onChange
             </div>
             <div className='flex flex-col gap-1 p-4 bg-[#0e0e0e] rounded-lg'>
                 <p>
-                Minutes
+                    Minutes
                 </p>
                 <Slider
+                    disabled={disabled}
                     value={minutesPolling}
                     onChange={setMinutesPolling}
                     color={getGradientColour(minutesPolling, 0, 60)}
@@ -80,9 +88,10 @@ export default function PollingSliders({ seconds, minutes, hours, days, onChange
             </div>
             <div className='flex flex-col gap-1 p-4 bg-[#0e0e0e] rounded-lg'>
                 <p>
-                Hours
+                    Hours
                 </p>
                 <Slider
+                    disabled={disabled}
                     value={hoursPolling}
                     onChange={setHoursPolling}
                     color={getGradientColour(hoursPolling, 0, 24)}
@@ -100,9 +109,10 @@ export default function PollingSliders({ seconds, minutes, hours, days, onChange
             </div>
             <div className='flex flex-col gap-1 p-4 bg-[#0e0e0e] rounded-lg'>
                 <p>
-                Days
+                    Days
                 </p>
                 <Slider
+                    disabled={disabled}
                     value={daysPolling}
                     onChange={setDaysPolling}
                     color={getGradientColour(daysPolling, 0, 30)}

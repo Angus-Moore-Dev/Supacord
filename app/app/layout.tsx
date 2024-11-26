@@ -24,8 +24,8 @@ export default async function AppLayout({ children }: Readonly<{ children: React
     else
         profileName = 'My Account';
 
-    return <div className="flex-grow flex flex-col">
-        <nav className="w-full h-[60px] bg-neutral-900 border-b-[1px] border-neutral-700 flex items-center gap-5 px-8 md:px-16">
+    return <div className="flex-grow flex flex-col relative">
+        <nav className="w-full h-[60px] bg-neutral-900 border-b-[1px] border-neutral-700 flex items-center gap-5 px-8 md:px-16 sticky top-0">
             <Link href='/app' className='flex gap-3 items-center'>
                 <Image src={SupacordIcon} alt='Supacord' width={35} height={40} quality={100} />
                 <Image src={SupacordLogo} alt='Supacord' width={150} height={60} quality={100} />

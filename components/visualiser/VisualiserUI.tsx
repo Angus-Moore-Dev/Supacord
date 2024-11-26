@@ -520,7 +520,8 @@ export default function VisualiserUI({
                             key={index}
                             project={project}
                             notebookEntry={entry}
-                            onMacroSaving={newMacro => setMacros(macros => [...macros, newMacro])}
+                            onDeleteEntry={() => setNotebookEntries(notebookEntries => notebookEntries.filter(x => x.id !== entry.id))}
+                            onMacroCreated={newMacro => setMacros(macros => [...macros, newMacro])}
                         />)
                     }
                 </section>

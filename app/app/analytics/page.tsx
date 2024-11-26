@@ -1,3 +1,4 @@
+import AnalyticsContainer from '@/components/analytics/AnalyticsContainer';
 import { createServerClient } from '@/utils/supabaseServer';
 import { Metadata } from 'next';
 
@@ -31,26 +32,26 @@ export default async function AnalyticsPage()
         </div>;
     }
 
-    const { data: projectsAndMacros, error: projectsAndMacrosError } = await supabase
+    const { data: projects, error: projectsError } = await supabase
         .from('projects')
-        .select('*, user_macros(*)');
+        .select('id, databaseName, projectId');
 
-    if (projectsAndMacrosError)
+    if (projectsError)
     {
-        console.error(projectsAndMacrosError);
+        console.error(projectsError);
         return <div>
             <h1>Error</h1>
-            <p>Failed to load projects and macros</p>
+            <p>Failed to load projects</p>
         </div>;
     }
-
+    
     console.log(profile);
-    console.log(projectsAndMacros);
+    console.log(projects);
 
 
-    return <div className='w-full flex flex-col gap-5 px-16 py-8'>
-        <h1>
-            Analytics & Observation Page - TODO!!!!
-        </h1>
+    return <div className='w-full flex flex-col gap-5 px-16 py-8 flex-grow'>
+        <AnalyticsContainer
+            projects={projects}
+        />
     </div>;
 }

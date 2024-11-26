@@ -13,6 +13,9 @@ interface MacroInputProps
     title: string;
     /** Callback function to update the title value in the parent component */
     setTitle: (title: string) => void;
+
+    /** Whether the input is disabled */
+    disabled?: boolean;
 }
 
 /**
@@ -22,6 +25,7 @@ interface MacroInputProps
  * @param {MacroInputProps} props - The component props
  * @param {string} props.title - The current title value
  * @param {Function} props.setTitle - Callback function to update the title
+ * @param {boolean} props.disabled - Whether the input is disabled
  * 
  * @returns A labeled input field with debounced updates
  * 
@@ -30,10 +34,11 @@ interface MacroInputProps
  * <MacroInput 
  *   title="My Macro" 
  *   setTitle={(newTitle) => handleTitleChange(newTitle)} 
+ *   disabled={true}
  * />
  * ```
  */
-export default function MacroInput({ title, setTitle }: MacroInputProps)
+export default function MacroInput({ title, setTitle, disabled = false }: MacroInputProps)
 {
     const [promptTitle, setPromptTitle] = useState(title);
     const [debouncedPromptTitle] = useDebouncedValue(promptTitle, 250);
@@ -52,6 +57,7 @@ export default function MacroInput({ title, setTitle }: MacroInputProps)
             value={promptTitle}
             onChange={(e) => setPromptTitle(e.currentTarget.value)}
             className='font-bold'
+            disabled={disabled}
         />
     </Input.Wrapper>;
 }
