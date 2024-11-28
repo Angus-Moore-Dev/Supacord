@@ -68,7 +68,7 @@ BEGIN
             url := 'https://rihzzgzyrfvczehemtsw.supabase.co/functions/v1/macro_computation',
             headers := jsonb_build_object(
                 'Content-Type', 'application/json',
-                'Authorization', 'Bearer supalytics_8144b465-ebfb-41be-913b-fbd2de78e801'
+                'Authorization', 'Bearer [SUPALYTICS KEY GOES HERE]'
             ),
             body := macro_array,
             timeout_milliseconds := 5000
