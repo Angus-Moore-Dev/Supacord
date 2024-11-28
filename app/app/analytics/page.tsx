@@ -15,26 +15,11 @@ export async function generateMetadata(): Promise<Metadata>
 export default async function AnalyticsPage()
 {
     const supabase = createServerClient();
-    const user = (await supabase.auth.getUser()).data.user!;
-
-    const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-    if (profileError)
-    {
-        console.error(profileError);
-        return <div>
-            <h1>Error</h1>
-            <p>Failed to load profile</p>
-        </div>;
-    }
 
     const { data: projects, error: projectsError } = await supabase
         .from('projects')
-        .select('id, databaseName, projectId');
+        .select('id, databaseName, projectId')
+        .order('createdAt', { ascending: true });
 
     if (projectsError)
     {
@@ -44,12 +29,9 @@ export default async function AnalyticsPage()
             <p>Failed to load projects</p>
         </div>;
     }
-    
-    console.log(profile);
-    console.log(projects);
 
 
-    return <div className='w-full flex flex-col gap-5 px-16 py-8 flex-grow'>
+    return <div className='w-full flex flex-col gap-5 flex-grow'>
         <AnalyticsContainer
             projects={projects}
         />

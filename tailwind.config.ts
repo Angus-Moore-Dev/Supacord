@@ -12,6 +12,8 @@ const config: Config = {
                 primary: '#1a1a1a',
                 'supabase-green': 'var(--supabase-green)',
                 green: '#51cf66',
+                'darker-green': '#37b24d',
+                'darkest-green': '#2b8a3e'
             },
         },
     },

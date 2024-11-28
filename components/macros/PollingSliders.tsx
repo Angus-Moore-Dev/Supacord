@@ -53,14 +53,14 @@ export default function PollingSliders({ seconds, minutes, hours, days, onChange
                     onChange={setSecondsPolling}
                     color={getGradientColour(secondsPolling, 0, 60)}
                     marks={[
-                        { value: 0, label: '0s' },
+                        { value: 5, label: '5s' },
                         { value: 10, label: '10s' },
                         { value: 20, label: '20s' },
                         { value: 30, label: '30s' },
                         { value: 45, label: '45s' },
                         { value: 60, label: '60s' }
                     ]}
-                    min={0}
+                    min={5}
                     max={60}
                     className='mb-6'
                 />
