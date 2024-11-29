@@ -30,7 +30,7 @@ export default async function HomePage()
             <WaitlistForm />
         </section>
         <small className='text-neutral-500 font-medium max-w-xl text-center'>
-            Supalytics is not affiliated with Supabase in any way. We are currently in private alpha and people on the waitlist will be invited in batches.
+            Supalytics is not affiliated with Supabase in any way. We are currently in private alpha and people on the waitlist will be invited in batches...
         </small>
     </section>;
 }
