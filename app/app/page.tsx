@@ -13,7 +13,7 @@ export default async function AppHomePage()
     {
         return <div className="flex flex-col px-16 py-8">
             <h1>
-                Error Fetching Your Profile :(
+                Error Fetching Your Profile...
             </h1>
             <p>
                 Check the developer console for more information.

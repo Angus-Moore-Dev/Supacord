@@ -1,8 +1,9 @@
 'use client';
 
-import { Button, Tabs } from '@mantine/core';
-import LargeMacroUILoader from '../macros/MacroUILoaders';
 import { useState } from 'react';
+import { Macro } from '@/lib/global.types';
+import { useEffect } from 'react';
+import { createBrowserClient } from '@/utils/supabaseBrowser';
 
 interface AnalyticsContainerProps
 {
@@ -11,10 +12,24 @@ interface AnalyticsContainerProps
 
 export default function AnalyticsContainer({ projects }: AnalyticsContainerProps)
 {
+    const supabase = createBrowserClient();
     const [selectedProject, setSelectedProject] = useState(projects[0].id ?? '');
+    const [macros, setMacros] = useState<Macro[]>([]);
+
+    useEffect(() => 
+    {
+        supabase.from('user_macros')
+            .select('*')
+            .eq('projectId', selectedProject)
+            .then(({ data, error }) => 
+            {
+                if (error) console.error(error);
+                setMacros((data ? data as Macro[] : []));
+            });
+    }, [selectedProject]);
 
     return <section className='flex-grow flex bg-neutral-900' defaultValue={projects[0].id ?? ''}>
-        <div className='flex-grow flex flex-col gap-1 max-w-[300px] bg-[#0e0e0e] border-r-[1px] border-neutral-700'>
+        <div className='flex-grow flex flex-col gap-1 min-w-[300px] max-w-[300px] bg-[#0e0e0e] border-r-[1px] border-neutral-700'>
             <div className={'w-full p-2 rounded-md bg-[#0e0e0e]'}>
                 {
                     projects.map(project => <button
@@ -28,6 +43,9 @@ export default function AnalyticsContainer({ projects }: AnalyticsContainerProps
             </div>
         </div>
         <div className='flex-grow grid grid-cols-2 gap-3 max-h-[calc(100vh-60px)] overflow-y-auto'>
+            {
+                JSON.stringify(macros)
+            }
             {/* <LargeMacroUILoader />
             <LargeMacroUILoader />
             <LargeMacroUILoader />
