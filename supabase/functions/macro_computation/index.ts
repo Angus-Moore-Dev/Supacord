@@ -23,8 +23,6 @@ Deno.serve(async (req: Request) =>
     if (!authHeader || authHeader !== `Bearer ${Deno.env.get('EDGE_FUNCTION_KEY')}` ) 
         return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
 
-    // TODO: Update to Macro object instead of just the id, since it saves in latency if we just have the whole object array.
-
     const macros = await req.json() as Macro[];
 
     if (!Array.isArray(macros))
@@ -37,17 +35,28 @@ Deno.serve(async (req: Request) =>
     // we want to compute all of these macros in parallel, since a lot of them will be across multiple projects for different users.
     const promiseChain: Promise<void>[] = [];
 
-    for (const macro of macros)
+    // Group macros by projectId to minimize token refreshes
+    const macrosByProject = macros.reduce((acc, macro) => 
+    {
+        if (!acc[macro.projectId]) 
+        {
+            acc[macro.projectId] = [];
+        }
+        acc[macro.projectId].push(macro);
+        return acc;
+    }, {} as Record<string, Macro[]>);
+
+    for (const [projectId, projectMacros] of Object.entries(macrosByProject)) 
     {
         promiseChain.push((async () => 
         {
             const { data: project, error: projectError } = await adminSupabase
                 .from('projects')
                 .select('id, organisationId, projectId, databaseName')
-                .eq('id', macro.projectId)
+                .eq('id', projectId)
                 .single();
 
-            if (projectError)
+            if (projectError) 
             {
                 console.error(projectError);
                 throw new Error(projectError.message);
@@ -59,57 +68,62 @@ Deno.serve(async (req: Request) =>
                 .eq('organisationId', project.organisationId)
                 .single();
 
-            if (accessTokenError)
+            if (accessTokenError) 
             {
                 console.error(accessTokenError);
                 throw new Error(accessTokenError.message);
             }
 
+            // Only refresh token once per project
             const updatedAccessToken = await refreshTokenSingular(accessToken, adminSupabase);
             const managementSupabase = new SupabaseManagementAPI({ accessToken: updatedAccessToken.accessToken });
 
-            const output: SearchStreamOutput[] = [];
-            // now we want to run the macro query against the given database.
-            for (const queryData of macro.queryData)
+            // Process all macros for this project
+            for (const macro of projectMacros) 
             {
-                try
+                const output: SearchStreamOutput[] = [];
+                
+                for (const queryData of macro.queryData) 
                 {
-                    const result = await managementSupabase.runQuery(project.projectId, queryData.sqlQuery);
-                    output.push({
-                        type: queryData.outputType,
-                        content: JSON.stringify(queryData.outputType.includes('chart') ? {
-                            ...queryData.chartDetails,
-                            data: result
-                        } : result)
+                    try 
+                    {
+                        const result = await managementSupabase.runQuery(project.projectId, queryData.sqlQuery);
+                        output.push({
+                            type: queryData.outputType,
+                            content: JSON.stringify(queryData.outputType.includes('chart') ? {
+                                ...queryData.chartDetails,
+                                data: result
+                            } : result)
+                        });
+                    }
+                    catch (error) 
+                    {
+                        if (isSupabaseError(error)) 
+                        {
+                            console.error(error);
+                            throw new Error(error.message);
+                        }
+                        else 
+                        {
+                            console.error(error);
+                            throw error;
+                        }
+                    }
+                }
+                
+                const { error: outputError } = await adminSupabase
+                    .from('user_macro_invocation_results')
+                    .insert({
+                        sqlQueries: (macro.queryData as { sqlQuery: string }[]).map(query => query.sqlQuery),
+                        macroId: macro.id,
+                        outputs: output
                     });
-                }
-                catch (error)
-                {
-                    if (isSupabaseError(error))
-                    {
-                        console.error(error);
-                        throw new Error(error.message);
-                    }
-                    else
-                    {
-                        console.error(error);
-                        throw error;
-                    }
-                }
-            }
-            
-            const { error: outputError } = await adminSupabase
-                .from('user_macro_invocation_results')
-                .insert({
-                    sqlQueries: (macro.queryData as { sqlQuery: string }[]).map(query => query.sqlQuery),
-                    macroId: macro.id,
-                    outputs: output
-                });
 
-            if (outputError)
-            {
-                console.error(outputError);
-                throw new Error(outputError.message);
+                if (outputError) 
+                {
+                    console.error(outputError);
+                    throw new Error(outputError.message);
+                }
             }
         })());
     }
