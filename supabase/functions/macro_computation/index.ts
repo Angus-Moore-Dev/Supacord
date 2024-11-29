@@ -174,13 +174,15 @@ export async function refreshTokenSingular(token: SupabaseToken, supabase: Supab
                 'Accept': 'application/json',
             },
             body: new URLSearchParams({
-                client_id: Deno.env.get('SUPABASE_CLIENT_ID')!,
-                client_secret: Deno.env.get('SUPABASE_CLIENT_SECRET')!,
+                client_id: Deno.env.get('SUPALYTICS_SUPABASE_CLIENT_ID')!,
+                client_secret: Deno.env.get('SUPALYTICS_SUPABASE_CLIENT_SECRET')!,
                 grant_type: 'refresh_token',
                 refresh_token: token.refreshToken,
             })
         });
+        
         const newTokenData = await response.json();
+        console.log(newTokenData);
         const { data: newToken, error: updateError } = await supabase
             .from('supabase_access_tokens')
             .update({
