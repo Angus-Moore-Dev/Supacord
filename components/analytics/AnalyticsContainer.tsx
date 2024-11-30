@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Macro } from '@/lib/global.types';
 import { useEffect } from 'react';
 import { createBrowserClient } from '@/utils/supabaseBrowser';
+import { MacroUIContainer } from './MacroUIContainer';
 
 interface AnalyticsContainerProps
 {
@@ -15,6 +16,7 @@ export default function AnalyticsContainer({ projects }: AnalyticsContainerProps
     const supabase = createBrowserClient();
     const [selectedProject, setSelectedProject] = useState(projects[0].id ?? '');
     const [macros, setMacros] = useState<Macro[]>([]);
+
 
     useEffect(() => 
     {
@@ -28,9 +30,10 @@ export default function AnalyticsContainer({ projects }: AnalyticsContainerProps
             });
     }, [selectedProject]);
 
+
     return <section className='flex-grow flex bg-neutral-900' defaultValue={projects[0].id ?? ''}>
         <div className='flex-grow flex flex-col gap-1 min-w-[300px] max-w-[300px] bg-[#0e0e0e] border-r-[1px] border-neutral-700'>
-            <div className={'w-full p-2 rounded-md bg-[#0e0e0e]'}>
+            <div className={'w-full p-2 rounded-md bg-[#0e0e0e] flex flex-col gap-1 max-h-[calc(100vh-60px)] overflow-y-auto'}>
                 {
                     projects.map(project => <button
                         key={project.id}
@@ -42,31 +45,25 @@ export default function AnalyticsContainer({ projects }: AnalyticsContainerProps
                 }
             </div>
         </div>
-        <div className='flex-grow grid grid-cols-2 gap-3 max-h-[calc(100vh-60px)] overflow-y-auto'>
-            {
-                JSON.stringify(macros)
-            }
-            {/* <LargeMacroUILoader />
-            <LargeMacroUILoader />
-            <LargeMacroUILoader />
-            <LargeMacroUILoader /> */}
-        </div>
-        {/* <Tabs orientation='vertical' variant='pills' className='h-full flex-grow overflow-y-auto'>
-            <Tabs.List className='bg-[#0e0e0e] max-h-[calc(100vh-60px)]'>
+        <div className='w-full grid grid-cols-2 gap-3 max-h-[calc(100vh-60px)] overflow-y-auto p-4'>
+            <section className='flex flex-col gap-3'>
+                {/* Even numbered macros go here */}
                 {
-                    projects.map((project) => <Tabs.Tab key={project.id} value={project.id}>{project.databaseName}</Tabs.Tab>)
+                    // macros.filter((macro, index) => index % 2 === 0).map(macro => <MacroUIContainer key={macro.id} macro={macro} />)
+                    macros.filter((_, index) => index % 2 === 0).map(macro => <MacroUIContainer key={macro.id} macro={macro} />)
                 }
-            </Tabs.List>
+            </section>
+            <section className='flex flex-col gap-3'>
+                {/* Odd numbered macros go here */}
+                {
+                    macros.filter((macro, index) => index % 2 === 1).map(macro => <MacroUIContainer key={macro.id} macro={macro} />)
+                }
+            </section>
+        </div>
+        {/* <div className='flex-grow grid grid-cols-2 gap-3 max-h-[calc(100vh-60px)] overflow-y-auto p-4'>
             {
-                projects.map((project) => <Tabs.Panel key={project.id} value={project.id} className='p-4 max-h-[calc(100vh-120px)] overflow-y-auto'>
-                    <section className='grid grid-cols-2 gap-3'>
-                        <LargeMacroUILoader />
-                        <LargeMacroUILoader />
-                        <LargeMacroUILoader />
-                        <LargeMacroUILoader />
-                    </section>
-                </Tabs.Panel>)
+                macros.map(macro => <MacroUIContainer key={macro.id} macro={macro} />)
             }
-        </Tabs> */}
+        </div> */}
     </section>;
 }

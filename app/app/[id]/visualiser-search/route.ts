@@ -3,7 +3,8 @@ import { createServerClient } from '@/utils/supabaseServer';
 import { NextRequest, NextResponse } from 'next/server';
 import { isSupabaseError, SupabaseManagementAPI } from 'supabase-management-js';
 import OpenAI from 'openai';
-import { NotebookEntry, NotebookEntryOutput, OutputType } from '@/lib/global.types';
+import { DatabaseSchemaStructure, NotebookEntry, NotebookEntryOutput, OutputType } from '@/lib/global.types';
+import getDatabaseTableStructure from '@/utils/getDatabaseTableStructure';
 
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
@@ -109,8 +110,24 @@ export async function POST(request: NextRequest)
     console.log(chatHistory.map(x => x.userPrompt));
 
     const managementSupabase = new SupabaseManagementAPI({ accessToken: token.accessToken });
-    // Fetch the database schema
-    const schema = project.databaseStructure;
+    // Fetch the database schema so that we have the latest version of the database.
+    const schemasResult = await managementSupabase.runQuery(project.projectId, 'SELECT schema_name FROM information_schema.schemata');
+    const schemas = (schemasResult as unknown as { schema_name: string }[])
+        .map((row: { schema_name: string }) => row.schema_name)
+        .filter((schema: string) => !schema.startsWith('pg_') && schema !== 'information_schema');
+
+    const promiseChain: Promise<DatabaseSchemaStructure>[] = [];
+
+    for (const schema of schemas)
+    {
+        promiseChain.push(getDatabaseTableStructure(managementSupabase, project.projectId, schema));
+    }
+
+    const schemaStructures = await Promise.all(promiseChain);
+    const schema = schemaStructures;
+
+    // non-blocking update to the database so that the schema is always up to date.
+    const projectUpdateResult = supabase.from('projects').update({ databaseStructure: schemaStructures }).eq('id', project.id);
 
     const tools = [
         {
@@ -200,6 +217,8 @@ export async function POST(request: NextRequest)
               * Scatter plots: Relationships
             - The visualisation xLabel, yLabel must correspond to the column names in the query exactly, and the title should be descriptive
             - Any dates or timestamps should be formatted in a human-readable way
+            - If you are unsure of the column names, use inferred names based on the query and the schema that you are provided below. Only reference 
+            the schema correctly, do not make up your own names for tables, columns, etc. This will cause errors.
     
             Schema Structure:
             \`\`\`json
@@ -245,6 +264,7 @@ export async function POST(request: NextRequest)
                     {
                         console.error('Invalid response from SQL generator');
                         controller.enqueue('\n=====ERROR=====\nAn error occurred while generating the SQL queries\n=====END ERROR=====\n');
+                        await new Promise(resolve => setTimeout(resolve, 250));
                         controller.close();
                         return;
                     }
@@ -261,14 +281,15 @@ export async function POST(request: NextRequest)
                     {
                         console.error(updateError);
                         controller.enqueue('\n=====ERROR=====\nAn error occurred while saving the SQL queries\n=====END ERROR=====\n');
+                        await new Promise(resolve => setTimeout(resolve, 250));
                     }
 
                     const notebookOutputs: NotebookEntryOutput[] = [];
                 
                     for (const query of queries) 
                     {
-                        await new Promise(resolve => setTimeout(resolve, 125));
                         controller.enqueue(`\n\n=====SQL QUERY=====\n${query.sqlQuery}\n=====END SQL QUERY=====\n`);
+                        await new Promise(resolve => setTimeout(resolve, 250));
                 
                         try 
                         {
@@ -279,6 +300,7 @@ export async function POST(request: NextRequest)
                 
                             // Output query explanation
                             controller.enqueue(`\n=====TEXT=====\n${query.queryExplanation}\n=====END TEXT=====\n`);
+                            await new Promise(resolve => setTimeout(resolve, 250));
                             
                             // Handle the single type with chart details if present
                             if (query.type.includes('chart') && query.chartDetails) 
@@ -289,14 +311,14 @@ export async function POST(request: NextRequest)
                                 };
                 
                                 console.log('Type:', query.type, 'is being sent to the client');
-                                await new Promise(resolve => setTimeout(resolve, 125));
                                 controller.enqueue(`\n=====${query.type.toUpperCase()}=====\n${JSON.stringify(chartData)}\n=====END ${query.type.toUpperCase()}=====\n`);
+                                await new Promise(resolve => setTimeout(resolve, 250));
                             }
                             else 
                             {
                                 console.log('Type:', query.type, 'is being sent to the client');
-                                await new Promise(resolve => setTimeout(resolve, 125));
                                 controller.enqueue(`\n=====${query.type.toUpperCase()}=====\n${JSON.stringify(result)}\n=====END ${query.type.toUpperCase()}=====\n`);
+                                await new Promise(resolve => setTimeout(resolve, 250));
                             }
 
                             // push a new output to the notebookOutputs array
@@ -319,11 +341,13 @@ export async function POST(request: NextRequest)
                             {
                                 console.error(error.message);
                                 controller.enqueue(`\n=====ERROR=====\n${error.message}\n=====END ERROR=====\n`);
+                                await new Promise(resolve => setTimeout(resolve, 250));
                             }
                             else 
                             {
                                 console.error(error);
                                 controller.enqueue('\n=====ERROR=====\nAn error occurred while executing the query\n=====END ERROR=====\n');
+                                await new Promise(resolve => setTimeout(resolve, 250));
                             }
                         }
                     }
@@ -348,6 +372,7 @@ export async function POST(request: NextRequest)
             }
             finally
             {
+                await projectUpdateResult;
                 controller.close();
             }
         },

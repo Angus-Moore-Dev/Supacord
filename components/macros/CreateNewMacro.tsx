@@ -4,7 +4,7 @@ import { Macro, NotebookEntry, Project } from '@/lib/global.types';
 import { CodeHighlightTabs } from '@mantine/code-highlight';
 import { Button, Divider, Modal } from '@mantine/core';
 import { Code2 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import SmallMacroUI, { LargeMacroUI } from './MacroUIs';
 import { v4 } from 'uuid';
 import PollingSliders from './PollingSliders';
@@ -62,9 +62,9 @@ export default function CreateNewMacro({
     const supabase = createBrowserClient();
 
     const [title, setTitle] = useState(notebookEntry.userPrompt || ''); // default to user prompt
-    const [secondsPolling, setSecondsPolling] = useState(3); // min 3, max 60
-    const [minutesPolling, setMinutesPolling] = useState(0); // min 0, max 60
-    const [hoursPolling, setHoursPolling] = useState(0); // min 0, max 24
+    const [secondsPolling, setSecondsPolling] = useState(5); // min 5, max 59
+    const [minutesPolling, setMinutesPolling] = useState(0); // min 0, max 59
+    const [hoursPolling, setHoursPolling] = useState(0); // min 0, max 23
     const [daysPolling, setDaysPolling] = useState(0); // min 0, max 30
 
     const [isCreating, setIsCreating] = useState(false);
@@ -120,6 +120,18 @@ export default function CreateNewMacro({
     }
 
 
+    useEffect(() => 
+    {
+        if (o)
+        {
+            setSecondsPolling(3);
+            setMinutesPolling(0);
+            setHoursPolling(0);
+            setDaysPolling(0);
+        }
+    }, [o]);
+
+
     return <Modal opened={o} onClose={onClose} size={'50%'} radius='lg' padding={'lg'} centered lockScroll withCloseButton={false}>
         <div className='flex flex-col gap-5 relative'>
             <h2 className='text-green text-center bg-[#1a1a1a] py-2.5 w-full sticky top-0 z-50'>
@@ -127,6 +139,8 @@ export default function CreateNewMacro({
             </h2>
             <Divider />
             <MacroInput
+                project={project}
+                notebookEntry={notebookEntry}
                 title={title}
                 setTitle={setTitle}
                 disabled={isCreating}
@@ -199,12 +213,12 @@ export default function CreateNewMacro({
                         queryData: notebookEntry.sqlQueries.map((query, index) => ({
                             sqlQuery: query,
                             // TODO: HOLY HACKAMOLY
-                            chartDetails: notebookEntry.outputs[index].chunks[0].type.includes('chart') ? {
+                            chartDetails: notebookEntry.outputs[index]?.chunks[0].type.includes('chart') ? {
                                 xLabel: (JSON.parse(notebookEntry.outputs[index].chunks[0].content) as { xLabel: string, yLabel: string, title: string }).xLabel,
                                 yLabel: (JSON.parse(notebookEntry.outputs[index].chunks[0].content) as { xLabel: string, yLabel: string, title: string }).yLabel,
                                 title: (JSON.parse(notebookEntry.outputs[index].chunks[0].content) as { xLabel: string, yLabel: string, title: string }).title,
                             } : undefined,
-                            outputType: notebookEntry.outputs[index].chunks[0].type, // TODO: Remove Hardcode!!!
+                            outputType: notebookEntry.outputs[index]?.chunks[0].type, // TODO: Remove Hardcode!!!
                         })),
                     }}
                     results={{
@@ -240,12 +254,12 @@ export default function CreateNewMacro({
                         queryData: notebookEntry.sqlQueries.map((query, index) => ({
                             sqlQuery: query,
                             // TODO: HOLY HACKAMOLY
-                            chartDetails: notebookEntry.outputs[index].chunks[0].type.includes('chart') ? {
+                            chartDetails: notebookEntry.outputs[index]?.chunks[0].type.includes('chart') ? {
                                 xLabel: (JSON.parse(notebookEntry.outputs[index].chunks[0].content) as { xLabel: string, yLabel: string, title: string }).xLabel,
                                 yLabel: (JSON.parse(notebookEntry.outputs[index].chunks[0].content) as { xLabel: string, yLabel: string, title: string }).yLabel,
                                 title: (JSON.parse(notebookEntry.outputs[index].chunks[0].content) as { xLabel: string, yLabel: string, title: string }).title,
                             } : undefined,
-                            outputType: notebookEntry.outputs[index].chunks[0].type, // TODO: Remove Hardcode!!!
+                            outputType: notebookEntry.outputs[index]?.chunks[0].type, // TODO: Remove Hardcode!!!
                         })),
                     }}
                     results={{
