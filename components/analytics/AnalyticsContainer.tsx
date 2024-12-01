@@ -1,21 +1,52 @@
 'use client';
 
 import { useState } from 'react';
-import { Macro } from '@/lib/global.types';
+import { Macro, MacroInvocationResults, Profile } from '@/lib/global.types';
 import { useEffect } from 'react';
 import { createBrowserClient } from '@/utils/supabaseBrowser';
 import { MacroUIContainer } from './MacroUIContainer';
+import { useRouter } from 'next/navigation';
 
 interface AnalyticsContainerProps
 {
+    profile: Profile;
     projects: { id: string, databaseName: string }[];
+    selectedProjectId: string;
 }
 
-export default function AnalyticsContainer({ projects }: AnalyticsContainerProps)
+export default function AnalyticsContainer({ profile, projects, selectedProjectId: spId }: AnalyticsContainerProps)
 {
+    const router = useRouter();
     const supabase = createBrowserClient();
-    const [selectedProject, setSelectedProject] = useState(projects[0].id ?? '');
+    const [selectedProject, setSelectedProject] = useState(spId ?? '');
     const [macros, setMacros] = useState<Macro[]>([]);
+    const [macroResults, setMacroResults] = useState<Record<string, MacroInvocationResults | undefined>>({});
+
+    useEffect(() => 
+    {
+        if (macros.length > 0)
+        {
+            // Realtime listener for new results that come in for the macros we have
+            const channel = supabase
+                .channel(`${profile.id}_user_macros`)
+                .on('postgres_changes', {
+                    event: '*',
+                    schema: 'public',
+                    table: 'user_macro_invocation_results',
+                    filter: `macroId=in.(${macros.map(macro => macro.id).join(',')})`
+                }, (payload) => 
+                {
+                    const newResult = payload.new as MacroInvocationResults;
+                    setMacroResults(prev => ({ ...prev, [newResult.macroId]: newResult }));
+                })
+                .subscribe(status => console.log(status));
+
+            return () => 
+            {
+                channel.unsubscribe();
+            };
+        }
+    }, [macros]);
 
 
     useEffect(() => 
@@ -27,7 +58,22 @@ export default function AnalyticsContainer({ projects }: AnalyticsContainerProps
             {
                 if (error) console.error(error);
                 setMacros((data ? data as Macro[] : []));
+
+                // we want to grab the latest results for each macro (only 1 per macro though)
+                const promiseChain = macros.map(macro => supabase
+                    .from('user_macro_invocation_results')
+                    .select('*')
+                    .eq('macroId', macro.id)
+                    .order('createdAt', { ascending: false })
+                    .limit(1));
+                Promise.all(promiseChain).then((results) => 
+                {
+                    setMacroResults(macros.reduce((acc, macro, index) => ({ ...acc, [macro.id]: results[index].data?.[0] ?? undefined }), {}));
+                });
             });
+
+        if (selectedProject)
+            router.replace(`/app/analytics/?projectId=${selectedProject}`);
     }, [selectedProject]);
 
 
@@ -50,20 +96,27 @@ export default function AnalyticsContainer({ projects }: AnalyticsContainerProps
                 {/* Even numbered macros go here */}
                 {
                     // macros.filter((macro, index) => index % 2 === 0).map(macro => <MacroUIContainer key={macro.id} macro={macro} />)
-                    macros.filter((_, index) => index % 2 === 0).map(macro => <MacroUIContainer key={macro.id} macro={macro} />)
+                    macros.filter((_, index) => index % 2 === 0).map(macro => 
+                        <MacroUIContainer
+                            key={macro.id}
+                            macro={macro}
+                            results={macroResults[macro.id]}
+                        />
+                    )
                 }
             </section>
             <section className='flex flex-col gap-3'>
                 {/* Odd numbered macros go here */}
                 {
-                    macros.filter((macro, index) => index % 2 === 1).map(macro => <MacroUIContainer key={macro.id} macro={macro} />)
+                    macros.filter((_, index) => index % 2 === 1).map(macro => 
+                        <MacroUIContainer
+                            key={macro.id}
+                            macro={macro}
+                            results={macroResults[macro.id]}
+                        />
+                    )
                 }
             </section>
         </div>
-        {/* <div className='flex-grow grid grid-cols-2 gap-3 max-h-[calc(100vh-60px)] overflow-y-auto p-4'>
-            {
-                macros.map(macro => <MacroUIContainer key={macro.id} macro={macro} />)
-            }
-        </div> */}
     </section>;
 }

@@ -16,8 +16,7 @@ export function LargeMacroUI({
     results
 }: LargeMacroUIProps)
 {
-
-    return <div className='flex flex-col gap-3 p-4 bg-[#0e0e0e] rounded-lg'>
+    return <div className='flex flex-col gap-5 p-4 bg-[#0e0e0e] rounded-lg'>
         <section className='flex items-start justify-between gap-3'>
             <h3 className='text-green text-center font-semibold'>
                 {macro.title}

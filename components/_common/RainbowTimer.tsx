@@ -1,5 +1,4 @@
 import { MacroPollingRate } from '@/lib/global.types';
-import { Tooltip } from '@mantine/core';
 import React, { useEffect, useState } from 'react';
 
 interface RainbowTimerProps {
@@ -10,14 +9,17 @@ interface RainbowTimerProps {
 export default function RainbowTimer({ latestTime, pollingRate }: RainbowTimerProps): JSX.Element 
 {
     const [progress, setProgress] = useState(0);
+    const [timeUntilNextInvocation, setTimeUntilNextInvocation] = useState('');
 
     useEffect(() => 
     {
+        // Reset progress when latestTime changes
+        setProgress(0);
+        
         const calculateProgress = () => 
         {
             const now = Math.floor(Date.now() / 1000); // Convert to UTC seconds
             const elapsed = now - latestTime;
-            console.log(elapsed);
 
             // Calculate total seconds from polling rate
             const totalSeconds = (
@@ -31,27 +33,31 @@ export default function RainbowTimer({ latestTime, pollingRate }: RainbowTimerPr
             if (elapsed > totalSeconds) 
             {
                 setProgress(1);
+                setTimeUntilNextInvocation('00:00:00');
                 return;
             }
 
-            // Calculate how many complete cycles have passed
-            const completedCycles = Math.floor(elapsed / totalSeconds);
-            
-            // Calculate the next invocation time
-            const nextInvocationTime = latestTime + ((completedCycles + 1) * totalSeconds);
-            
-            // Calculate seconds remaining until next invocation
-            const remainingSeconds = nextInvocationTime - now;
+            // For new invocations, we only care about the current cycle
+            const remainingSeconds = totalSeconds - (elapsed % totalSeconds);
             
             // Convert to progress (1 = just started, 0 = about to invoke)
             const newProgress = remainingSeconds / totalSeconds;
             setProgress(1 - newProgress); // Invert so progress increases as we get closer
+
+            // Calculate time until next invocation immediately after updating progress
+            const hours = String(Math.floor(remainingSeconds / 3600)).padStart(2, '0');
+            const minutes = String(Math.floor((remainingSeconds % 3600) / 60)).padStart(2, '0');
+            const seconds = String(Math.floor(remainingSeconds % 60)).padStart(2, '0');
+            setTimeUntilNextInvocation(`${hours}:${minutes}:${seconds}`);
         };
 
         calculateProgress();
         const interval = setInterval(calculateProgress, 250);
     
-        return () => clearInterval(interval);
+        return () => 
+        {
+            clearInterval(interval);
+        };
     }, [latestTime, pollingRate]);
 
     // Convert progress (0-1) to hue (240-0, blue to red)
@@ -62,9 +68,8 @@ export default function RainbowTimer({ latestTime, pollingRate }: RainbowTimerPr
     const rotation = -progress * 360;
 
     return (
-        <Tooltip position={'bottom'} label={`
-            ${Math.floor(progress * 100)}%
-        `}>
+        <div className='flex gap-3 items-center'>
+            <p className='text-sm font-medium'>{timeUntilNextInvocation}</p>
             <div className={`relative w-8 h-8 min-w-8 min-h-8 ${progress >= 1 ? 'animate-pulse' : ''}`}>
                 <svg 
                     viewBox="0 0 40 40" 
@@ -105,6 +110,6 @@ export default function RainbowTimer({ latestTime, pollingRate }: RainbowTimerPr
                     />
                 </svg>
             </div>
-        </Tooltip>
+        </div>
     );
 }

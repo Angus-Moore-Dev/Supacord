@@ -55,7 +55,12 @@ export default async function ProjectsPage()
                     <section className='flex gap-3'>
                         <Link href={`/app/${project.id}`}>
                             <Button>
-                                Enter Project &rarr;
+                                Enter To Notebooks &rarr;
+                            </Button>
+                        </Link>
+                        <Link href={`/app/analytics/?projectId=${project.id}`}>
+                            <Button variant='subtle'>
+                                View Analytics &rarr;
                             </Button>
                         </Link>
                     </section>

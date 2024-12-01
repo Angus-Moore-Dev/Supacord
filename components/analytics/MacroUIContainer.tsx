@@ -6,18 +6,29 @@ import { useEffect, useState } from 'react';
 import LargeMacroUILoader from '../macros/MacroUILoaders';
 import { LargeMacroUI } from '../macros/MacroUIs';
 import RainbowTimer from '../_common/RainbowTimer';
-
+import Link from 'next/link';
+import { Button, Pill } from '@mantine/core';
+import { TZDate } from '@date-fns/tz';
 
 interface MacroUIContainerProps
 {
     macro: Macro;
+    // update our local state with the new results
+    results: MacroInvocationResults | undefined;
 }
 
-export function MacroUIContainer({ macro }: MacroUIContainerProps)
+export function MacroUIContainer({ macro, results: r }: MacroUIContainerProps)
 {
     const supabase = createBrowserClient();
-    const [isFetching, setIsFetching] = useState(true);
-    const [results, setResults] = useState<MacroInvocationResults>();
+    const [isFetching, setIsFetching] = useState(r === undefined);
+    const [results, setResults] = useState<MacroInvocationResults | undefined>(r ?? undefined);
+
+
+    useEffect(() => 
+    {
+        setResults(r);
+    }, [r]);
+
 
     useEffect(() => 
     {
@@ -31,7 +42,7 @@ export function MacroUIContainer({ macro }: MacroUIContainerProps)
                 .eq('macroId', macro.id)
                 .order('createdAt', { ascending: false })
                 .limit(1);
-                
+
             if (error)
             {
                 console.error(error);
@@ -39,13 +50,9 @@ export function MacroUIContainer({ macro }: MacroUIContainerProps)
             }
 
             if (data.length > 0)
-            {
                 setResults(data[0] as MacroInvocationResults);
-            }
             else
-            {
                 setResults(undefined);
-            }
 
             setIsFetching(false);
         };
@@ -54,15 +61,20 @@ export function MacroUIContainer({ macro }: MacroUIContainerProps)
     }, []);
 
     return <div className="flex flex-col gap-1 p-4 bg-[#0e0e0e] rounded-lg border-[1px] border-neutral-700">
-        <section className='flex gap-3 items-center justify-between bg-[#161616] p-2 rounded-lg'>
-            <small className='text-center text-neutral-500'>
-                {JSON.stringify(macro.pollingRate)}
-            </small>
+        <section className='flex flex-wrap gap-3 items-center justify-between bg-[#161616] p-2 rounded-lg'>
+            <Link href={`/app/analytics/${macro.id}`}>
+                <Button variant='subtle' size='xs'>
+                    View Full History
+                </Button>
+            </Link>
             {
                 results &&
                 <section className='flex gap-3 items-center'>
+                    <Pill>
+                        Last Updated: {new TZDate(results.createdAt, undefined).toLocaleString()}
+                    </Pill> 
                     <RainbowTimer
-                        latestTime={Math.floor(new Date(results.createdAt).getTime() / 1000)}
+                        latestTime={Math.floor(new TZDate(results.createdAt, undefined).getTime() / 1000)}
                         pollingRate={macro.pollingRate}
                     />
                 </section>
