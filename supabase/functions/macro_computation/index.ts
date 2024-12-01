@@ -6,6 +6,7 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import type { 
     Macro,
+    OutputType,
     SearchStreamOutput
 } from 'lib/global.types.ts';
 import type { Database } from 'lib/database.types.ts';
@@ -79,11 +80,16 @@ Deno.serve(async (req: Request) =>
             const managementSupabase = new SupabaseManagementAPI({ accessToken: updatedAccessToken.accessToken });
 
             // Process all macros for this project
-            for (const macro of projectMacros) 
+            await Promise.all(projectMacros.map(async (macro) => 
             {
                 const output: SearchStreamOutput[] = [];
                 
-                for (const queryData of macro.queryData) 
+                // Run all queries in parallel for this macro
+                await Promise.all(macro.queryData.map(async (queryData: { sqlQuery: string, outputType: OutputType, chartDetails: {
+                    xLabel: string,
+                    yLabel: string,
+                    title: string
+                } }) => 
                 {
                     try 
                     {
@@ -109,7 +115,7 @@ Deno.serve(async (req: Request) =>
                             throw error;
                         }
                     }
-                }
+                }));
                 
                 const { error: outputError } = await adminSupabase
                     .from('user_macro_invocation_results')
@@ -124,7 +130,7 @@ Deno.serve(async (req: Request) =>
                     console.error(outputError);
                     throw new Error(outputError.message);
                 }
-            }
+            }));
         })());
     }
 
