@@ -91,6 +91,11 @@ export default function CreateNewMacro({
             queryData: notebookEntry.sqlQueries.map((query, index) => ({
                 sqlQuery: query,
                 outputType: notebookEntry.outputs[index].chunks[0].type,
+                chartDetails: notebookEntry.outputs[index].chunks[0].type.includes('chart') ? {
+                    xLabel: (JSON.parse(notebookEntry.outputs[index].chunks[0].content) as { xLabel: string, yLabel: string, title: string }).xLabel,
+                    yLabel: (JSON.parse(notebookEntry.outputs[index].chunks[0].content) as { xLabel: string, yLabel: string, title: string }).yLabel,
+                    title: (JSON.parse(notebookEntry.outputs[index].chunks[0].content) as { xLabel: string, yLabel: string, title: string }).title,
+                } : undefined,
             })),
         };
 
@@ -124,10 +129,11 @@ export default function CreateNewMacro({
     {
         if (o)
         {
-            setSecondsPolling(3);
+            setSecondsPolling(5);
             setMinutesPolling(0);
             setHoursPolling(0);
             setDaysPolling(0);
+            setTitle(notebookEntry.userPrompt || '');
         }
     }, [o]);
 

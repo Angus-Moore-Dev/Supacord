@@ -16,26 +16,12 @@ export function LargeMacroUI({
     results
 }: LargeMacroUIProps)
 {
-    const now = new Date();
-    const invocationDate = new Date(results.createdAt);
-    // figure out when it was last run and return in days, hours, minutes, seconds
-    const diff = now.getTime() - invocationDate.getTime();
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const minutes = Math.floor(diff / (1000 * 60));
-    const seconds = Math.floor(diff / 1000);
-
-    const timeSince = days > 0 ? `${days} days` : hours > 0 ? `${hours} hours` : minutes > 0 ? `${minutes} minutes` : `${seconds} seconds`;
-
 
     return <div className='flex flex-col gap-3 p-4 bg-[#0e0e0e] rounded-lg'>
         <section className='flex items-start justify-between gap-3'>
-            <h4 className='font-medium text-green'>
+            <h3 className='text-green text-center font-semibold'>
                 {macro.title}
-            </h4>
-            <p className='text-sm text-neutral-500'>
-                {timeSince} ago
-            </p>
+            </h3>
         </section>
         {
             results.outputs.map((output, index) => 
