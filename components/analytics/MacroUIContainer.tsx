@@ -60,7 +60,12 @@ export function MacroUIContainer({ macro, results: r }: MacroUIContainerProps)
         fetchResults();
     }, []);
 
-    return <div className="flex flex-col gap-1 p-4 bg-[#0e0e0e] rounded-lg border-[1px] border-neutral-700">
+    return <div className="flex flex-col gap-3 p-4 bg-[#0e0e0e] rounded-lg border-[1px] border-neutral-700">
+        <section className='flex items-start justify-between gap-3 w-full'>
+            <h3 className='text-center font-semibold mx-auto'>
+                {macro.title}
+            </h3>
+        </section>
         <section className='flex flex-wrap gap-3 items-center justify-between bg-[#161616] p-2 rounded-lg'>
             <Link href={`/app/analytics/${macro.id}`}>
                 <Button variant='subtle' size='xs'>

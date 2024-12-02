@@ -102,12 +102,10 @@ export default function VisualiserUI({
     const [userSearch, setUserSearch] = useState('');
 
     const [notebooks, setNotebooks] = useState(n);
-    const [selectedNotebookId, setSelectedNotebookId] = useState('');
+    const [selectedNotebookId, setSelectedNotebookId] = useState(preSelectedNotebookId ?? '');
 
     const [macros, setMacros] = useState(m);
-
     const [notebookEntries, setNotebookEntries] = useState<NotebookEntry[]>(preSelectedNotebookEntries);
-
     const [isSendingMessage, setIsSendingMessage] = useState(false);
 
 
@@ -215,6 +213,7 @@ export default function VisualiserUI({
             }
 
             const message = new TextDecoder().decode(value);
+            console.log('new chunk::', message);
 
             // for notebook entries, we want to get the last one and then add to the latest version output.
             const lastEntry = localNotebookEntries[localNotebookEntries.length - 1];

@@ -198,6 +198,7 @@ export async function POST(request: NextRequest)
                 - Complex operations can be broken down
                 - Visualization requires different data structures
                 - Multiple insights are needed from the same data
+                - Multiple requests are made in the prompt, asking for different things
             4. Generate multiple queries when needed for providing different insights, use your best judgment
             5. Provide brief explanations for each query to help the user understand the purpose
             6. Make sure you satisfy the whole user prompt, not just partial. Break it up into multiple queries to guarantee full coverage.
@@ -240,143 +241,177 @@ export async function POST(request: NextRequest)
         })
     ];
 
-    const streamingResponse = new ReadableStream({
-        async start(controller) 
+    const encoder = new TextEncoder();
+    const stream = new TransformStream();
+    const writer = stream.writable.getWriter();
+
+    // Helper function to write and flush chunks
+    const writeChunk = async (text: string) => 
+    {
+        console.log('Writing chunk:', text);
+        await writer.write(encoder.encode(text));
+        // Ensure the chunk is flushed immediately
+        await writer.ready;
+        await new Promise(resolve => setTimeout(resolve, 100));
+    };
+
+    (async () => 
+    {
+        try 
         {
-            try
+            //@ts-expect-error - stream is not in the types
+            const response = await openai.chat.completions.create({
+                model: 'gpt-4o',
+                messages: messages,
+                tools: tools,
+                tool_choice: 'required',
+                temperature: 0.3
+            });
+            
+            const toolCalls = response.choices[0].message.tool_calls;
+            if (toolCalls?.[0]) 
             {
-                //@ts-expect-error - stream is not in the types
-                const response = await openai.chat.completions.create({
-                    model: 'gpt-4o',
-                    messages: messages,
-                    tools: tools,
-                    tool_choice: 'required',
-                    temperature: 0.3
-                });
-                
-                const toolCalls = response.choices[0].message.tool_calls;
-                if (toolCalls?.[0]) 
+                const generatedResponse: SQLGeneratorResponse = JSON.parse(toolCalls[0].function.arguments);
+                console.log('Generated SQL response::', generatedResponse);
+            
+                if (!isValidSQLResponse(generatedResponse)) 
                 {
-                    const generatedResponse: SQLGeneratorResponse = JSON.parse(toolCalls[0].function.arguments);
-                    console.log('Generated SQL response::', generatedResponse);
-                
-                    if (!isValidSQLResponse(generatedResponse)) 
-                    {
-                        console.error('Invalid response from SQL generator');
-                        controller.enqueue('\n=====ERROR=====\nAn error occurred while generating the SQL queries\n=====END ERROR=====\n');
-                        await new Promise(resolve => setTimeout(resolve, 250));
-                        controller.close();
-                        return;
-                    }
-                
-                    const { queries } = generatedResponse;
-                
-                    // Store SQL queries
-                    const { error: updateError } = await supabase
-                        .from('notebook_entries')
-                        .update({ sqlQueries: queries.map(query => query.sqlQuery) })
-                        .eq('id', notebookEntryId);
-                
-                    if (updateError) 
-                    {
-                        console.error(updateError);
-                        controller.enqueue('\n=====ERROR=====\nAn error occurred while saving the SQL queries\n=====END ERROR=====\n');
-                        await new Promise(resolve => setTimeout(resolve, 250));
-                    }
+                    console.error('Invalid response from SQL generator');
+                    await writeChunk('\n=====ERROR=====\nAn error occurred while generating the SQL queries\n=====END ERROR=====\n');
+                    return;
+                }
+            
+                const { queries } = generatedResponse;
+            
+                // Store SQL queries
+                const { error: updateError } = await supabase
+                    .from('notebook_entries')
+                    .update({ sqlQueries: queries.map(query => query.sqlQuery) })
+                    .eq('id', notebookEntryId);
+            
+                if (updateError) 
+                {
+                    console.error(updateError);
+                    await writeChunk('\n=====ERROR=====\nAn error occurred while saving the SQL queries\n=====END ERROR=====\n');
+                    return;
+                }
 
-                    const notebookOutputs: NotebookEntryOutput[] = [];
-                
-                    for (const query of queries) 
+                const notebookOutputs: NotebookEntryOutput[] = [];
+            
+                for (const query of queries) 
+                {
+                    await writeChunk(`\n\n=====SQL QUERY=====\n${query.sqlQuery}\n=====END SQL QUERY=====\n`);
+            
+                    try 
                     {
-                        controller.enqueue(`\n\n=====SQL QUERY=====\n${query.sqlQuery}\n=====END SQL QUERY=====\n`);
-                        await new Promise(resolve => setTimeout(resolve, 250));
-                
-                        try 
+                        const result = await managementSupabase.runQuery(
+                            project.projectId, 
+                            query.sqlQuery
+                        );
+
+                        // Ensure result exists and is not empty
+                        if (!result) 
                         {
-                            const result = await managementSupabase.runQuery(
-                                project.projectId, 
-                                query.sqlQuery
-                            );
-                
-                            // Output query explanation
-                            controller.enqueue(`\n=====TEXT=====\n${query.queryExplanation}\n=====END TEXT=====\n`);
-                            await new Promise(resolve => setTimeout(resolve, 250));
-                            
-                            // Handle the single type with chart details if present
-                            if (query.type.includes('chart') && query.chartDetails) 
-                            {
-                                const chartData = {
-                                    ...query.chartDetails,
-                                    data: result
-                                };
-                
-                                console.log('Type:', query.type, 'is being sent to the client');
-                                controller.enqueue(`\n=====${query.type.toUpperCase()}=====\n${JSON.stringify(chartData)}\n=====END ${query.type.toUpperCase()}=====\n`);
-                                await new Promise(resolve => setTimeout(resolve, 250));
-                            }
-                            else 
-                            {
-                                console.log('Type:', query.type, 'is being sent to the client');
-                                controller.enqueue(`\n=====${query.type.toUpperCase()}=====\n${JSON.stringify(result)}\n=====END ${query.type.toUpperCase()}=====\n`);
-                                await new Promise(resolve => setTimeout(resolve, 250));
-                            }
+                            console.error('Query returned no results');
+                            const output = '\n=====ERROR=====\nQuery returned no results\n=====END ERROR=====\n';
+                            await writeChunk(output);
+                            continue;
+                        }
+            
+                        // Output query explanation
+                        await writeChunk(`\n=====TEXT=====\n${query.queryExplanation}\n=====END TEXT=====\n`);
+                        notebookOutputs.push({
+                            version: 1,
+                            chunks: [{ type: OutputType.Text, content: query.queryExplanation }]
+                        });
+                        
+                        // Handle the single type with chart details if present
+                        if (query.type.includes('chart') && query.chartDetails) 
+                        {
+                            const chartData = {
+                                ...query.chartDetails,
+                                data: result
+                            };
+            
+                            console.log('Type:', query.type, 'Chart data:', chartData);
+                            const chartOutput = `\n=====${query.type.toUpperCase()}=====\n${JSON.stringify(chartData)}\n=====END ${query.type.toUpperCase()}=====\n`;
+                            await writeChunk(chartOutput);
+                        }
+                        else 
+                        {
+                            console.log('Type:', query.type, 'Result:', result);
+                            const dataOutput = `\n=====${query.type.toUpperCase()}=====\n${JSON.stringify(result)}\n=====END ${query.type.toUpperCase()}=====\n`;
+                            await writeChunk(dataOutput);
+                        }
 
-                            // push a new output to the notebookOutputs array
+                        // push a new output to the notebookOutputs array
+                        notebookOutputs.push({
+                            version: 1,
+                            chunks: [{
+                                type: query.type,
+                                content: query.chartDetails ? JSON.stringify({
+                                    xLabel: query.chartDetails?.xLabel,
+                                    yLabel: query.chartDetails?.yLabel,
+                                    title: query.chartDetails?.title,
+                                    data: result
+                                }) : JSON.stringify(result)
+                            }]
+                        });
+                    }
+                    catch (error) 
+                    {
+                        if (isSupabaseError(error)) 
+                        {
+                            console.error('Supabase Error:', error.message);
+                            await writeChunk(`\n=====ERROR=====\n${error.message}\n=====END ERROR=====\n`);
                             notebookOutputs.push({
                                 version: 1,
-                                chunks: [{
-                                    type: query.type,
-                                    content: query.type.includes('chart') ? JSON.stringify({
-                                        xLabel: query.chartDetails?.xLabel,
-                                        yLabel: query.chartDetails?.yLabel,
-                                        title: query.chartDetails?.title,
-                                        data: result
-                                    }) : JSON.stringify(result)
-                                }]
+                                chunks: [{ type: OutputType.Error, content: error.message }]
                             });
                         }
-                        catch (error) 
+                        else 
                         {
-                            if (isSupabaseError(error)) 
-                            {
-                                console.error(error.message);
-                                controller.enqueue(`\n=====ERROR=====\n${error.message}\n=====END ERROR=====\n`);
-                                await new Promise(resolve => setTimeout(resolve, 250));
-                            }
-                            else 
-                            {
-                                console.error(error);
-                                controller.enqueue('\n=====ERROR=====\nAn error occurred while executing the query\n=====END ERROR=====\n');
-                                await new Promise(resolve => setTimeout(resolve, 250));
-                            }
+                            console.error('Query Error:', error);
+                            await writeChunk('\n=====ERROR=====\nAn error occurred while executing the query\n=====END ERROR=====\n');
+                            notebookOutputs.push({
+                                version: 1,
+                                chunks: [{ type: OutputType.Error, content: 'An error occurred while executing the query' }]
+                            });
                         }
                     }
+                }
 
-                    // now we want to store these outputs in the database
-                    const { error: outputError } = await supabase
-                        .from('notebook_entries')
-                        .update({ outputs: notebookOutputs })
-                        .eq('id', notebookEntryId);
+                // now we want to store these outputs in the database
+                const { error: outputError } = await supabase
+                    .from('notebook_entries')
+                    .update({ outputs: notebookOutputs })
+                    .eq('id', notebookEntryId);
 
-                    if (outputError)
-                    {
-                        console.error(outputError);
-                        controller.enqueue('\n=====ERROR=====\nAn error occurred while saving the outputs\n=====END ERROR=====\n');
-                    }
+                if (outputError) 
+                {
+                    console.error(outputError);
+                    await writeChunk('\n=====ERROR=====\nAn error occurred while saving the outputs\n=====END ERROR=====\n');
                 }
             }
-            catch (error)
-            {
-                console.error(error);
-                controller.enqueue('\n=====ERROR=====\nAn error occurred while generating the SQL queries\n=====END ERROR=====\n');
-            }
-            finally
-            {
-                await projectUpdateResult;
-                controller.close();
-            }
-        },
-    });
+        }
+        catch (error) 
+        {
+            console.error('Stream Error:', error);
+            await writeChunk('\n=====ERROR=====\nAn error occurred while generating the SQL queries\n=====END ERROR=====\n');
+        }
+        finally 
+        {
+            await projectUpdateResult;
+            await writer.close();
+        }
+    })();
 
-    return new Response(streamingResponse, { headers: { 'Content-Type': 'text/plain' }});
+
+    return new Response(stream.readable, {
+        headers: {
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive'
+        }
+    });
 }

@@ -91,32 +91,43 @@ export default function AnalyticsContainer({ profile, projects, selectedProjectI
                 }
             </div>
         </div>
-        <div className='w-full grid grid-cols-2 gap-3 max-h-[calc(100vh-60px)] overflow-y-auto p-4'>
-            <section className='flex flex-col gap-3'>
-                {/* Even numbered macros go here */}
-                {
-                    // macros.filter((macro, index) => index % 2 === 0).map(macro => <MacroUIContainer key={macro.id} macro={macro} />)
-                    macros.filter((_, index) => index % 2 === 0).map(macro => 
-                        <MacroUIContainer
-                            key={macro.id}
-                            macro={macro}
-                            results={macroResults[macro.id]}
-                        />
-                    )
-                }
-            </section>
-            <section className='flex flex-col gap-3'>
-                {/* Odd numbered macros go here */}
-                {
-                    macros.filter((_, index) => index % 2 === 1).map(macro => 
-                        <MacroUIContainer
-                            key={macro.id}
-                            macro={macro}
-                            results={macroResults[macro.id]}
-                        />
-                    )
-                }
-            </section>
-        </div>
+        {
+            macros.length === 0 && selectedProject &&
+            <div className='w-full flex-grow flex flex-col gap-3 items-center justify-center'>
+                <h2 className='text-neutral-500 max-w-xl text-center'>
+                    No Macros exist for <b>{projects.find(project => project.id === selectedProject)?.databaseName}</b> yet.
+                </h2>
+            </div>
+        }
+        {
+            macros.length > 0 &&
+            <div className='w-full grid grid-cols-2 gap-3 max-h-[calc(100vh-60px)] overflow-y-auto p-4'>
+                <section className='flex flex-col gap-3'>
+                    {/* Even numbered macros go here */}
+                    {
+                        // macros.filter((macro, index) => index % 2 === 0).map(macro => <MacroUIContainer key={macro.id} macro={macro} />)
+                        macros.filter((_, index) => index % 2 === 0).map(macro => 
+                            <MacroUIContainer
+                                key={macro.id}
+                                macro={macro}
+                                results={macroResults[macro.id]}
+                            />
+                        )
+                    }
+                </section>
+                <section className='flex flex-col gap-3'>
+                    {/* Odd numbered macros go here */}
+                    {
+                        macros.filter((_, index) => index % 2 === 1).map(macro => 
+                            <MacroUIContainer
+                                key={macro.id}
+                                macro={macro}
+                                results={macroResults[macro.id]}
+                            />
+                        )
+                    }
+                </section>
+            </div>
+        }
     </section>;
 }

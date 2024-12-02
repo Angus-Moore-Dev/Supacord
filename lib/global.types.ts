@@ -77,6 +77,11 @@ export type PrimaryKeyEntities = { primaryKey: string, ids: string[] };
 
 export enum OutputType
 {
+    FetchingDatabaseSchema = 'fetching database schema',
+    GeneratingQuery = 'generating query',
+    RunningQuery = 'running query',
+
+    // Actual output results that are non-loading
     Error = 'error',
     Text = 'text',
     SQL = 'sql query',
