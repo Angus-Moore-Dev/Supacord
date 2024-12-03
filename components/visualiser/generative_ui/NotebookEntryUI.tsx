@@ -82,7 +82,7 @@ export default function NotebookEntryUI({
         }
     }
 
-    return <div className={'bg-[#2a2a2a] p-4 px-8 rounded-md mb-2 whitespace-pre-line flex flex-col gap-5 relative'}>
+    return <div className={'bg-[#1a1a1a] p-4 px-8 rounded-md mb-2 whitespace-pre-line flex flex-col gap-5 relative'}>
         <div className='flex gap-2 items-start sticky top-0 z-30 bg-[#0e0e0e] bg-opacity-50 backdrop-blur-md p-4 px-8 rounded-lg border-[1px] border-green'>
             {
                 !profile.profilePictureURL && <User2 size={32} className='text-transparent fill-green min-w-[32px]' />

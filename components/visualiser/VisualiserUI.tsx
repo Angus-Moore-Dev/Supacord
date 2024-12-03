@@ -384,9 +384,9 @@ export default function VisualiserUI({
                     </small>
                 }
                 {
-                    notebooks.map((notebook, index) => <Button variant={selectedNotebookId === notebook.id ? 'filled' : 'subtle'} key={index} fullWidth onClick={() => setSelectedNotebookId(notebook.id)}>
+                    notebooks.map((notebook, index) => <button key={index} className={`text-xs rounded transition text-green hover:text-black font-semibold hover:bg-green p-2 w-full text-left ${selectedNotebookId === notebook.id ? 'bg-green text-black' : ''}`} onClick={() => setSelectedNotebookId(notebook.id)}>
                         {notebook.title}
-                    </Button>)
+                    </button>)
                 }
             </div>
             {/* Make a button that goes halfway down and sits on the right border with chevrons to expand or close */}
