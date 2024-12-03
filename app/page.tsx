@@ -1,4 +1,3 @@
-import WaitlistForm from '@/components/homepage/WaitlistForm';
 import HomepageNavbar from '@/components/HomepageNavbar';
 import { createServerClient } from '@/utils/supabaseServer';
 
