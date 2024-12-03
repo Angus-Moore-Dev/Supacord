@@ -18,14 +18,14 @@ export default async function HomePage()
                         <b className='text-green'>Natural Language Queries</b> & Analytics for <b className='text-supabase-green'>Supabase</b> Developers.
                     </b>
                 </h1>
-                <h3 className='max-w-2xl text-center lg:text-left'>
-                    {/* Stop wasting time staring at UUIDs, writing massive SQL macros and being a monkey staring at a monolith. Embrace science-fiction technology. */}
-                    You will be able to dynamically query your database, store common macros/charts/visuals, possess realtime updates and 
-                    intelligently be displayed metrics/information with a natural language interface.
+                <h3>
+                    This is a dead project. Go and read the code on <a href="https://github.com/angus-moore-dev/supalytics" className='text-supabase-green'>GitHub</a>.
+                    <br />
+                    <br />
+                    There&apos;s some innovative code that I wrote, particularly with respect to how it handles automated querying of user data.
                 </h3>
-                <h4 className='max-w-2xl text-center lg:text-left'>
-                    If you are a a developer with a Supabase project and you want to <b>see your data</b>, then Supacord
-                    is something you&apos;ll have on your development toolbelt forever.
+                <h4>
+                    I am now working full-time on NOTEX.
                 </h4>
             </div>
             <WaitlistForm />
