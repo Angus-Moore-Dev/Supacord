@@ -22,6 +22,9 @@ export default async function HomePage()
                     <br />
                     <br />
                     There&apos;s some innovative code that I wrote, particularly with respect to how it handles automated querying of user data.
+                    <br />
+                    <br />
+                    Or you can read my account on 𝕏 <a href='https://x.com/angusmoore00' className='text-supabase-green'>here</a>.
                 </h3>
                 <h4>
                     I am now working full-time on NOTEX.
